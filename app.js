@@ -86,8 +86,10 @@ async function connectWallet() {
           $("walletAddress").textContent = `${address.slice(0, 6)}...${address.slice(-6)}`;
           $("walletAddress").classList.remove("hidden");
           $("networkBadge").classList.remove("hidden");
+          $("disconnectWalletBtn").classList.remove("hidden");
           $("connectWalletBtn").classList.add("hidden");
           
+          await refreshUserBalance();
           hideStatus();
           loadLocalStorageConfig();
           await loadEngagements();
@@ -100,6 +102,44 @@ async function connectWallet() {
   } catch (err) {
     showStatus(`Failed to open wallet options: ${err.message || err}`, "error");
   }
+}
+
+// Fetch and display user's XLM balance
+async function refreshUserBalance() {
+  if (!connectedAddress) return;
+  try {
+    const account = await horizonServer.loadAccount(connectedAddress);
+    const nativeBalance = account.balances.find((b) => b.asset_type === "native");
+    const balance = nativeBalance ? Number(nativeBalance.balance).toFixed(4) : "0.0000";
+    $("userBalance").textContent = `${balance} XLM`;
+    $("userBalance").classList.remove("hidden");
+  } catch (err) {
+    if (err?.response?.status === 404) {
+      $("userBalance").textContent = "0.0000 XLM (Unfunded)";
+      $("userBalance").classList.remove("hidden");
+    } else {
+      console.error("Failed to fetch balance:", err);
+    }
+  }
+}
+
+// Disconnect Wallet
+function disconnectWallet() {
+  connectedAddress = null;
+  engagementsList = [];
+  selectedEngagement = null;
+  
+  $("walletAddress").classList.add("hidden");
+  $("networkBadge").classList.add("hidden");
+  $("userBalance").classList.add("hidden");
+  $("disconnectWalletBtn").classList.add("hidden");
+  $("connectWalletBtn").classList.remove("hidden");
+  
+  $("engagementList").innerHTML = `<div class="text-center text-muted" style="padding: 20px 0;">Connect your wallet to load engagements.</div>`;
+  $("noActiveSelection").classList.remove("hidden");
+  $("activeSelectionDetails").classList.add("hidden");
+  
+  hideStatus();
 }
 
 // Load configurations
@@ -185,6 +225,7 @@ async function invokeContractViaKit(contractId, method, scArgs = []) {
     response = await rpcServer.getTransaction(txHash);
     if (response.status === "SUCCESS") {
       logOnChainTx(method, txHash);
+      await refreshUserBalance();
       return { hash: txHash, result: response };
     }
     if (response.status === "FAILED") {
@@ -621,5 +662,6 @@ function startOnChainEventPolling() {
   }, 6000);
 }
 
-// Wire Connect Button
+// Wire Connect/Disconnect Buttons
 $("connectWalletBtn").addEventListener("click", connectWallet);
+$("disconnectWalletBtn").addEventListener("click", disconnectWallet);
