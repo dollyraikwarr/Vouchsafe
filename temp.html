@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vouchsafe — Escrow That Only Pays When the Work Is Done</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #060814;
+      --card-bg: rgba(13, 17, 39, 0.6);
+      --border-glass: rgba(255, 255, 255, 0.08);
+      --text-main: #f3f4f6;
+      --text-muted: #8a8f9f;
+      --primary: #3b82f6;
+      --secondary: #a855f7;
+      --accent: #22d3ee;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Grid overlay background */
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Glow blobs */
+    .glow-blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(140px);
+      opacity: 0.15;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .glow-1 {
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, var(--primary), var(--secondary));
+      top: -100px;
+      right: -100px;
+    }
+
+    .glow-2 {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, var(--accent), var(--primary));
+      bottom: 10%;
+      left: -100px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Header Nav */
+    header.site-header {
+      padding: 24px 0;
+      border-bottom: 1px solid var(--border-glass);
+      backdrop-filter: blur(8px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--text-main);
+      text-decoration: none;
+    }
+
+    .logo-icon {
+      font-size: 1.5rem;
+    }
+
+    nav.main-nav {
+      display: flex;
+      gap: 32px;
+    }
+
+    nav.main-nav a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    nav.main-nav a:hover {
+      color: var(--text-main);
+    }
+
+    .nav-buttons {
+      display: flex;
+      gap: 16px;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+      border: 1px solid transparent;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-primary:hover {
+      background-color: #2563eb;
+      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-secondary {
+      background-color: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      border: 1px solid var(--border-glass);
+    }
+
+    .btn-secondary:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-outline {
+      border: 1px solid var(--border-glass);
+      color: var(--text-main);
+      background: transparent;
+    }
+
+    .btn-outline:hover {
+      border-color: var(--text-muted);
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 100px 0 60px 0;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 48px;
+      align-items: center;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background-color: rgba(59, 130, 246, 0.1);
+      color: var(--accent);
+      padding: 6px 12px;
+      border-radius: 100px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 24px;
+      border: 1px solid rgba(34, 211, 238, 0.2);
+    }
+
+    .hero-eyebrow-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    .hero-h1 {
+      font-size: 3.5rem;
+      font-weight: 900;
+      line-height: 1.15;
+      margin-bottom: 24px;
+      letter-spacing: -0.025em;
+    }
+
+    .hero-h1 em {
+      font-style: normal;
+      color: transparent;
+      background: linear-gradient(135deg, var(--accent), var(--primary));
+      -webkit-background-clip: text;
+      background-clip: text;
+      text-shadow: 0 0 30px rgba(34, 211, 238, 0.15);
+    }
+
+    .hero-sub {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      margin-bottom: 36px;
+      max-width: 580px;
+    }
+
+    .hero-ctas {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .hero-footnote {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    /* Chain Animation Mockup */
+    .hero-graphics {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .chain-container {
+      width: 100%;
+      max-width: 420px;
+      position: relative;
+    }
+
+    .chain-svg {
+      width: 100%;
+      height: auto;
+      filter: drop-shadow(0 0 30px rgba(168, 85, 247, 0.2));
+    }
+
+    /* Flow Chart Widget */
+    .flow-widget {
+      background: var(--card-bg);
+      border: 1px solid var(--border-glass);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      margin-top: 48px;
+    }
+
+    .flow-grid {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+    }
+
+    .flow-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      z-index: 2;
+    }
+
+    .node-circle {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: rgba(13, 17, 39, 0.8);
+      border: 1px solid var(--border-glass);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+      transition: all 0.3s;
+    }
+
+    .flow-node.active .node-circle {
+      border-color: var(--accent);
+      box-shadow: 0 0 20px rgba(34, 211, 238, 0.3);
+      background-color: rgba(34, 211, 238, 0.1);
+    }
+
+    .flow-arrow {
+      flex: 1;
+      height: 2px;
+      background: linear-gradient(90deg, var(--border-glass), var(--border-glass));
+      margin: 0 -10px;
+      position: relative;
+      top: -12px;
+    }
+
+    .flow-arrow.active {
+      background: linear-gradient(90deg, var(--accent), var(--primary));
+    }
+
+    .node-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .flow-node.active .node-label {
+      color: var(--text-main);
+    }
+
+    /* Section Layouts */
+    .section-title-box {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .section-eyebrow {
+      color: var(--primary);
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .mkt-section {
+      padding: 80px 0;
+      border-top: 1px solid var(--border-glass);
+    }
+
+    /* Problem Section */
+    .problem-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: start;
+    }
+
+    .problem-intro {
+      max-width: 500px;
+    }
+
+    .problem-p {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      margin-bottom: 24px;
+    }
+
+    .problem-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .problem-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-glass);
+      border-radius: 12px;
+      padding: 24px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      backdrop-filter: blur(8px);
+    }
+
+    .problem-card-icon {
+      font-size: 1.5rem;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 8px;
+      border: 1px solid var(--border-glass);
+    }
+
+    .problem-card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .problem-card-desc {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    /* How It Works Flow Cards */
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+
+    .step-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-glass);
+      border-radius: 12px;
+      padding: 24px;
+      position: relative;
+      backdrop-filter: blur(8px);
+    }
+
+    .step-card.active {
+      border-color: var(--primary);
+      box-shadow: 0 0 24px rgba(59, 130, 246, 0.15);
+    }
+
+    .step-num {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.05);
+      font-size: 2rem;
+      line-height: 1;
+    }
+
+    .step-icon {
+      font-size: 1.5rem;
+      margin-bottom: 16px;
+      display: inline-block;
+    }
+
+    .step-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .step-desc {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* Record / Protocol Simulation Section */
+    .record-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+
+    .record-terminal {
+      background: #03040b;
+      border: 1px solid var(--border-glass);
+      border-radius: 12px;
+      padding: 24px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .terminal-head {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-glass);
+      padding-bottom: 16px;
+      margin-bottom: 16px;
+      color: var(--text-muted);
+    }
+
+    .terminal-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .terminal-dots span {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border-glass);
+    }
+
+    .terminal-dots span:nth-child(1) { background: #ef4444; }
+    .terminal-dots span:nth-child(2) { background: #eab308; }
+    .terminal-dots span:nth-child(3) { background: #22c55e; }
+
+    .record-dl div {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.03);
+    }
+
+    .record-dl dt {
+      color: var(--accent);
+    }
+
+    .record-dl dd {
+      color: var(--text-main);
+      text-align: right;
+    }
+
+    .badge-completed {
+      background: rgba(34, 197, 94, 0.1);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.2);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    /* Who It's For Grid */
+    .persona-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .persona-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-glass);
+      border-radius: 12px;
+      padding: 32px;
+      backdrop-filter: blur(8px);
+    }
+
+    .persona-badge {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 16px;
+      display: inline-block;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .persona-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+      letter-spacing: -0.01em;
+    }
+
+    .persona-desc {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    /* Roadmap section */
+    .roadmap-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+    }
+
+    .roadmap-column {
+      background: var(--card-bg);
+      border: 1px solid var(--border-glass);
+      border-radius: 12px;
+      padding: 32px;
+    }
+
+    .roadmap-col-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .roadmap-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .roadmap-item {
+      position: relative;
+      padding-left: 24px;
+    }
+
+    .roadmap-item::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 8px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .roadmap-live .roadmap-item::before {
+      background-color: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+    }
+
+    .roadmap-next .roadmap-item::before {
+      background-color: var(--primary);
+    }
+
+    .roadmap-item h4 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .roadmap-item p {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    /* FAQ accordion styling */
+    .faq-list {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .faq-item {
+      background: var(--card-bg);
+      border: 1px solid var(--border-glass);
+      border-radius: 8px;
+      overflow: hidden;
+      transition: all 0.2s;
+    }
+
+    .faq-question {
+      padding: 20px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .faq-answer {
+      padding: 0 24px 20px 24px;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      display: none;
+    }
+
+    .faq-item.open .faq-answer {
+      display: block;
+    }
+
+    .faq-toggle {
+      transition: transform 0.2s;
+      font-size: 1.2rem;
+      color: var(--text-muted);
+    }
+
+    .faq-item.open .faq-toggle {
+      transform: rotate(45deg);
+    }
+
+    /* Footer Call to Action Section */
+    .footer-cta {
+      padding: 100px 0;
+      text-align: center;
+      position: relative;
+    }
+
+    .cta-h2 {
+      font-size: 3rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      margin-bottom: 24px;
+    }
+
+    /* Footer Meta */
+    footer.site-footer {
+      padding: 40px 0;
+      border-top: 1px solid var(--border-glass);
+      background-color: rgba(0, 0, 0, 0.3);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    @media (max-width: 768px) {
+      nav.main-nav {
+        display: none; /* Hide desktop nav links on mobile */
+      }
+      .nav-container {
+        justify-content: space-between;
+      }
+      .hero {
+        grid-template-columns: 1fr;
+        padding-top: 60px;
+        text-align: center;
+      }
+      .hero-sub {
+        margin: 0 auto 36px auto;
+      }
+      .hero-ctas {
+        justify-content: center;
+      }
+      .problem-layout {
+        grid-template-columns: 1fr;
+        gap: 30px;
+      }
+      .steps-grid {
+        grid-template-columns: 1fr;
+      }
+      .record-layout {
+        grid-template-columns: 1fr;
+        gap: 30px;
+      }
+      .persona-grid {
+        grid-template-columns: 1fr;
+      }
+      .roadmap-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Glow blobs -->
+  <div class="glow-blob glow-1"></div>
+  <div class="glow-blob glow-2"></div>
+
+  <!-- Header Nav -->
+  <header class="site-header">
+    <div class="container nav-container">
+      <a href="#" class="logo">
+        <span class="logo-icon">🛡️</span> Vouchsafe
+      </a>
+      <nav class="main-nav">
+        <a href="#problem">Problem</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#protocol">Protocol</a>
+        <a href="#roadmap">Roadmap</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <div class="nav-buttons">
+        <a href="#app" class="btn btn-primary">Launch App</a>
+        <a href="#" class="btn btn-outline">View Testnet</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="container hero">
+    <div>
+      <div class="hero-eyebrow">
+        <span class="hero-eyebrow-dot"></span>
+        Live on Stellar Testnet · Soroban smart contract
+      </div>
+      <h1 class="hero-h1">Escrow that only pays out when the work is <em>ACTUALLY</em> done.</h1>
+      <p class="hero-sub">
+        Fund a job on Stellar. The developer submits proof — a URL, a PR, a commit. You approve it, and payment releases automatically, in the same transaction. No platforms taking a cut or deciding on their own terms.
+      </p>
+      <div class="hero-ctas">
+        <a href="#app" class="btn btn-primary">Launch App</a>
+        <a href="#" class="btn btn-secondary">View Contract ></a>
+      </div>
+      <p class="hero-footnote">CBHLS5...OOTXMKTR · Stellar Testnet</p>
+    </div>
+    
+    <div class="hero-graphics">
+      <div class="chain-container">
+        <!-- SVG visualization of 3D Chain link -->
+        <svg class="chain-svg" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <g filter="url(#glow)">
+            <path d="M70 100 C 70 70, 130 70, 130 100 C 130 130, 70 130, 70 100" stroke="#3b82f6" stroke-width="8" stroke-linecap="round"/>
+            <path d="M100 70 C 100 40, 160 40, 160 70 C 160 100, 100 100, 100 70" stroke="#a855f7" stroke-width="8" stroke-linecap="round" stroke-dasharray="6 4"/>
+            <path d="M40 130 C 40 100, 100 100, 100 130 C 100 160, 40 160, 40 130" stroke="#22d3ee" stroke-width="8" stroke-linecap="round"/>
+          </g>
+          <defs>
+            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="6" result="blur"/>
+              <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+            </filter>
+          </defs>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- Flow Chart Widget -->
+  <section class="container" style="margin-bottom: 80px;">
+    <div class="flow-widget">
+      <div class="flow-grid">
+        <div class="flow-node active">
+          <div class="node-circle">💳</div>
+          <div class="node-label">Wallet</div>
+        </div>
+        <div class="flow-arrow active"></div>
+        <div class="flow-node active">
+          <div class="node-circle">🔒</div>
+          <div class="node-label">Contract Lock</div>
+        </div>
+        <div class="flow-arrow active"></div>
+        <div class="flow-node">
+          <div class="node-circle">💻</div>
+          <div class="node-label">Developer</div>
+        </div>
+        <div class="flow-arrow"></div>
+        <div class="flow-node">
+          <div class="node-circle">🤝</div>
+          <div class="node-label">Client Approval</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Problem Section -->
+  <section class="container mkt-section" id="problem">
+    <div class="problem-layout">
+      <div class="problem-intro">
+        <div class="section-eyebrow">Problem</div>
+        <h2 class="section-title" style="margin-bottom: 24px;">Getting paid for real work still runs on trust.</h2>
+        <p class="problem-p">
+          Vouchsafe replaces trust with a multi-step escrow paying out trust and automatically releasing payment once you are happy with the work. No platforms taking a cut or deciding on their own terms.
+        </p>
+      </div>
+      
+      <div class="problem-cards">
+        <div class="problem-card">
+          <span class="problem-card-icon">💻</span>
+          <div>
+            <h4 class="problem-card-title">If you're the developer...</h4>
+            <p class="problem-card-desc">Try to make deliverables to standard. Write clean code, keep deliverables up to date, keep comments and PR links neat and short.</p>
+          </div>
+        </div>
+        <div class="problem-card">
+          <span class="problem-card-icon">🤝</span>
+          <div>
+            <h4 class="problem-card-title">If you're the client...</h4>
+            <p class="problem-card-desc">You, the client, want to pay reliable developers for tasks. Lock the payment in the escrow contract and check the work. Once you're happy with the work, click Approve and release payment.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Flow Cards -->
+  <section class="container mkt-section" id="how-it-works">
+    <div class="section-title-box">
+      <div class="section-eyebrow">How it works</div>
+      <h2 class="section-title">Four steps. One state machine.</h2>
+    </div>
+
+    <div class="steps-grid">
+      <div class="step-card">
+        <span class="step-num">01</span>
+        <span class="step-icon">📝</span>
+        <h3 class="step-title">Create</h3>
+        <p class="step-desc">The client defines the engagement — developer address, payment amount, token, and deadline.</p>
+      </div>
+      <div class="step-card">
+        <span class="step-num">02</span>
+        <span class="step-icon">💵</span>
+        <h3 class="step-title">Fund</h3>
+        <p class="step-desc">Payment locks into the contract's on-chain escrow. Nobody can spend it until the state machine moves.</p>
+      </div>
+      <div class="step-card">
+        <span class="step-num">03</span>
+        <span class="step-icon">📤</span>
+        <h3 class="step-title">Submit</h3>
+        <p class="step-desc">The developer records deliverable proof on-chain: a URL, a PR link, a commit hash, and a note.</p>
+      </div>
+      <div class="step-card active">
+        <span class="step-num">04</span>
+        <span class="step-icon">✅</span>
+        <h3 class="step-title">Approve</h3>
+        <p class="step-desc">Client approves. Payment releases to the developer automatically, in the same transaction.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Protocol / Record Section -->
+  <section class="container mkt-section" id="protocol">
+    <div class="record-layout">
+      <div>
+        <div class="section-eyebrow">On-chain record</div>
+        <h2 class="section-title" style="margin-bottom: 24px;">Every engagement is a permanent, queryable record</h2>
+        <p class="problem-p">
+          <code style="font-family: var(--font-mono); color: var(--accent);">get_engagement()</code> returns exactly what happened — client, developer, amount, deliverables, and whether payment actually released. No summary, no interpretation.
+        </p>
+      </div>
+      
+      <div class="record-terminal">
+        <div class="terminal-head">
+          <div class="terminal-dots"><span></span><span></span><span></span></div>
+          <span>get_engagement(482) · example</span>
+          <span class="badge-completed">Completed</span>
+        </div>
+        <dl class="record-dl">
+          <div><dt>id</dt><dd>482</dd></div>
+          <div><dt>client</dt><dd>GBLQ7...WT2NF</dd></div>
+          <div><dt>developer</dt><dd>GDXK2...RM4QP</dd></div>
+          <div><dt>token</dt><dd>CDLZFC...RMQQVU</dd></div>
+          <div><dt>amount</dt><dd>500.0000000</dd></div>
+          <div><dt>work_url</dt><dd>github.com/…/vouchsafe-api</dd></div>
+          <div><dt>work_pr_url</dt><dd>github.com/…/pull/118</dd></div>
+          <div><dt>work_commit</dt><dd>a1b2c3d4</dd></div>
+          <div><dt>status</dt><dd>Completed</dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- Who It's For Grid -->
+  <section class="container mkt-section" id="who-its-for">
+    <div class="section-title-box">
+      <div class="section-eyebrow">Who it's for</div>
+      <h2 class="section-title">Guaranteed contracts for everyone</h2>
+    </div>
+
+    <div class="persona-grid">
+      <div class="persona-card">
+        <span class="persona-badge">Clients</span>
+        <h3 class="persona-title">Lock funds securely</h3>
+        <p class="persona-desc">Vouchsafe is for any organization, company, or individual that wants to lock funds in a trust and pay only for completed tasks.</p>
+      </div>
+      <div class="persona-card">
+        <span class="persona-badge">Developers</span>
+        <h3 class="persona-title">Guranteed payout</h3>
+        <p class="persona-desc">Vouchsafe is for developers, freelancers, contractors, or any individual that wants to deliver work with payout guarantees.</p>
+      </div>
+      <div class="persona-card">
+        <span class="persona-badge">Escrow Managers</span>
+        <h3 class="persona-title">Manage engagements</h3>
+        <p class="persona-desc">Vouchsafe is for managers, multi-signatures, or any individual that wants to manage third-party escrows or contracts.</p>
+      </div>
+      <div class="persona-card">
+        <span class="persona-badge">Multi-signatures</span>
+        <h3 class="persona-title">Decentralized control</h3>
+        <p class="persona-desc">Vouchsafe is for organizations, multi-signatures, or any individual that wants multi-signature control on escrow payouts.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Roadmap Section -->
+  <section class="container mkt-section" id="roadmap">
+    <div class="section-title-box">
+      <div class="section-eyebrow">Roadmap</div>
+      <h2 class="section-title">Live today & What's next</h2>
+    </div>
+
+    <div class="roadmap-layout">
+      <div class="roadmap-column roadmap-live">
+        <h3 class="roadmap-col-title">🟢 Live today</h3>
+        <ul class="roadmap-list">
+          <li class="roadmap-item">
+            <h4>Escrow engagement state machine</h4>
+            <p>Full implementation of created, funded, submitted, and completed state machine on-chain.</p>
+          </li>
+          <li class="roadmap-item">
+            <h4>Escrow funds lock/unlock with native token</h4>
+            <p>Automatic asset lock on funding and release to developer on client approval.</p>
+          </li>
+          <li class="roadmap-item">
+            <h4>Testnet deployment and Freighter integration</h4>
+            <p>Smart contract live on Stellar Testnet and wallet connector support.</p>
+          </li>
+        </ul>
+      </div>
+
+      <div class="roadmap-column roadmap-next">
+        <h3 class="roadmap-col-title">🔵 What's next</h3>
+        <ul class="roadmap-list">
+          <li class="roadmap-item">
+            <h4>Multi-engagement state machine</h4>
+            <p>Support for managing multiple developer escrows inside a single dashboard.</p>
+          </li>
+          <li class="roadmap-item">
+            <h4>Dynamic thresholds with auto-calculated deadlines</h4>
+            <p>Custom timeouts to automate disputes if deadlines are missed.</p>
+          </li>
+          <li class="roadmap-item">
+            <h4>Arbitrator dispute resolve module</h4>
+            <p>Decentralized arbitration layer to resolve pending or incomplete deliverables.</p>
+          </li>
+          <li class="roadmap-item">
+            <h4>Mainnet deployment</h4>
+            <p>Optimized contract deployment on Stellar Mainnet.</p>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section class="container mkt-section" id="faq">
+    <div class="section-title-box">
+      <div class="section-eyebrow">FAQ</div>
+      <h2 class="section-title">Straight answers</h2>
+    </div>
+
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-question">
+          <span>What happens if the client doesn't approve?</span>
+          <span class="faq-toggle">+</span>
+        </div>
+        <div class="faq-answer">
+          If a client fails to approve, the escrowed funds remain locked in the contract. A dispute resolution or arbitration layer is planned for the next roadmap phase to handle contested deliverables.
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question">
+          <span>What assets can I use?</span>
+          <span class="faq-toggle">+</span>
+        </div>
+        <div class="faq-answer">
+          You can use any standard Stellar asset (Stellar Asset Contract / SAC) for escrows. This includes native XLM as well as custom tokens and stablecoins.
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question">
+          <span>Is it secure?</span>
+          <span class="faq-toggle">+</span>
+        </div>
+        <div class="faq-answer">
+          Yes, all state transitions and escrow releases are governed strictly by the smart contract code compiled to WASM and verified on the Stellar ledger. Authorization checks ensure only the developer can submit work, and only the client can approve it.
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question">
+          <span>What format is required?</span>
+          <span class="faq-toggle">+</span>
+        </div>
+        <div class="faq-answer">
+          When submitting work, the developer must provide a deliverable URL (e.g. GitHub link), a pull request link, a commit hash, and a short completion note.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer Call to Action -->
+  <section class="container footer-cta">
+    <h2 class="cta-h2">Fund it. Prove it. Get paid.</h2>
+    <a href="#app" class="btn btn-primary btn-lg" style="padding: 14px 28px; font-size: 1.05rem;">Launch App</a>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <p>Vouchsafe Escrow Portal · Connected to Stellar Testnet · Running on Soroban Smart Contracts</p>
+    </div>
+  </footer>
+
+  <script>
+    // FAQ Accordion Toggle Interaction
+    document.querySelectorAll('.faq-question').forEach(item => {
+      item.addEventListener('click', () => {
+        const parent = item.parentElement;
+        const isOpen = parent.classList.contains('open');
+        
+        // Close all other accordion items
+        document.querySelectorAll('.faq-item').forEach(child => {
+          child.classList.remove('open');
+        });
+
+        // Open this one if it wasn't already open
+        if (!isOpen) {
+          parent.classList.add('open');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
