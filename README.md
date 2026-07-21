@@ -4,6 +4,18 @@ Vouchsafe is a trust and escrow payment protocol for technical deliverables. It 
 
 ---
 
+## 🏅 Stellar White Belt (Level 1) Compliance
+This project satisfies all Level 1 White Belt submission requirements:
+1. **Wallet Setup**: Configured for Freighter Wallet and connects to the Stellar Testnet.
+2. **Wallet Connection**: Connect and Disconnect wallet buttons are fully implemented in the UI.
+3. **Balance Handling**: Queries Horizon server for the connected wallet's native XLM balance and displays it in real time (formatted to 4 decimal places) next to the connected address.
+4. **Transaction Flow**: Real on-chain Testnet transactions are submitted when creating, funding, or releasing escrows. The frontend provides real-time banner feedback showing:
+   - Success/Failure states.
+   - Clickable StellarExpert transaction hashes (e.g. `https://stellar.expert/explorer/testnet/tx/...`).
+5. **Development Standards**: Pure JS/HTML/CSS implementation without simulated state, using `@creit.tech/stellar-wallets-kit` and `@stellar/stellar-sdk`.
+
+---
+
 ## 1. Smart Contract Architecture
 
 The protocol is built using a Soroban smart contract in Rust, running on **Stellar Testnet**.
