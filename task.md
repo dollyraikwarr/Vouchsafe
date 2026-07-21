@@ -1,0 +1,26 @@
+# Vouchsafe Implementation Checklist
+
+- [x] Initialize workspace config files
+  - [x] Create `Vouchsafe/Cargo.toml`
+  - [x] Create `Vouchsafe/package.json`
+  - [x] Create `Vouchsafe/.gitignore`
+- [x] Create Soroban Smart Contract Package
+  - [x] Create `Vouchsafe/contracts/vouchsafe/Cargo.toml`
+  - [x] Create `Vouchsafe/contracts/vouchsafe/src/lib.rs` with complete state machine, events, token escrow transfer, and auth logic
+- [x] Add and run smart contract tests
+  - [x] Implement happy path tests in `lib.rs`
+  - [x] Implement negative path tests in `lib.rs`
+  - [x] Run unit tests on host (all 7 tests passed successfully)
+- [x] Build Frontend
+  - [x] Create `Vouchsafe/index.html` with client & developer dashboards, wallet connect buttons, and workflow timeline
+  - [x] Create `Vouchsafe/style.css` with dark mode glassmorphism UI
+  - [x] Create `Vouchsafe/app.js` with Stellar SDK / Freighter integration
+- [x] Finalize Documentation & Setup Guidelines
+  - [x] Create `Vouchsafe/README.md`
+  - [x] Create `walkthrough.md` in the artifact directory
+- [x] Milestone: Testnet Deployment & Verification
+  - [x] Build release target WASM
+  - [x] Generate and fund deployer account key on Testnet
+  - [x] Deploy Vouchsafe contract to Stellar Testnet
+  - [x] Configure frontend with deployed contract ID
+  - [x] Verify event timeline & security behavior

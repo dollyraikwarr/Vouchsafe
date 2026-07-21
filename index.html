@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vouchsafe — On-Chain Work Escrow Payments on Stellar</title>
+  <meta name="description" content="Vouchsafe is a secure trust and escrow payment protocol for technical deliverables, powered by Soroban smart contracts on the Stellar Testnet." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "@creit.tech/stellar-wallets-kit": "https://esm.sh/@creit.tech/stellar-wallets-kit@1.7.5?bundle&deps=@stellar/stellar-sdk@14.0.0",
+        "@stellar/stellar-sdk": "https://esm.sh/@stellar/stellar-sdk@14.0.0"
+      }
+    }
+  </script>
+  <!-- Polyfill Node Buffer for StellarWalletsKit dependencies in browser -->
+  <script>
+    window.JS_SHA256_NO_NODE_JS = true;
+  </script>
+  <script type="module">
+    import { Buffer } from 'https://cdn.jsdelivr.net/npm/buffer@6.0.3/+esm';
+    window.Buffer = Buffer;
+  </script>
+</head>
+<body>
+  <!-- Decorative background glow blobs -->
+  <div class="bg-gradients">
+    <div class="gradient-1"></div>
+    <div class="gradient-2"></div>
+  </div>
+
+  <!-- Top Navbar -->
+  <nav class="site-nav">
+    <div class="container nav-container">
+      <a href="index.html" class="brand">
+        <span class="brand-logo">🛡️</span> Vouchsafe
+      </a>
+      <div class="wallet-section">
+        <span id="networkBadge" class="wallet-badge hidden">Testnet</span>
+        <span id="walletAddress" class="wallet-badge hidden">Not Connected</span>
+        <button id="connectWalletBtn" class="btn btn-primary">Connect Wallet</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <!-- Transaction/Action Status Banner -->
+    <div id="statusBanner" class="status-banner hidden">
+      <div id="statusIcon" class="spinner"></div>
+      <div id="statusText">Processing transaction...</div>
+    </div>
+
+    <div class="dashboard">
+      <!-- Left Panel: Lists and Creation Forms -->
+      <div class="flex-column">
+        <!-- Contract Configuration -->
+        <div class="card">
+          <h2 class="card-title">⚙️ Configuration</h2>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="contractIdInput">Vouchsafe Contract ID</label>
+            <input type="text" id="contractIdInput" class="form-control" placeholder="Contract address (C...)" value="" />
+          </div>
+        </div>
+
+        <!-- Role Switching Tabs -->
+        <div class="role-selectors">
+          <button id="clientRoleBtn" class="role-btn active">Client View</button>
+          <button id="developerRoleBtn" class="role-btn">Developer View</button>
+        </div>
+
+        <!-- Create Engagement Form (Only visible to Client) -->
+        <div id="clientCreateCard" class="card">
+          <h2 class="card-title">🆕 Create Engagement</h2>
+          <form id="createEngagementForm">
+            <div class="form-group">
+              <label for="devAddressInput">Developer Address</label>
+              <input type="text" id="devAddressInput" class="form-control" placeholder="G..." required />
+            </div>
+            <div class="form-group">
+              <label for="titleInput">Work Title</label>
+              <input type="text" id="titleInput" class="form-control" placeholder="e.g. Implement API Endpoint" required />
+            </div>
+            <div class="form-group">
+              <label for="descInput">Detailed Description</label>
+              <textarea id="descInput" class="form-control" placeholder="Specify deliverables and requirements..." required></textarea>
+            </div>
+            <div class="form-group">
+              <label for="amountInput">Payment Amount (XLM)</label>
+              <input type="number" id="amountInput" class="form-control" placeholder="100" min="1" step="any" required />
+            </div>
+            <div class="form-group">
+              <label for="tokenInput">Stellar Asset Address (SAC)</label>
+              <input type="text" id="tokenInput" class="form-control" placeholder="CD..." required />
+            </div>
+            <div class="form-group">
+              <label for="deadlineInput">Deadline</label>
+              <input type="datetime-local" id="deadlineInput" class="form-control" required />
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Create Agreement</button>
+          </form>
+        </div>
+
+        <!-- Submit Work Form (Only visible to Developer when a funded engagement is selected) -->
+        <div id="developerSubmitCard" class="card hidden">
+          <h2 class="card-title">📤 Submit Work Proof</h2>
+          <form id="submitWorkForm">
+            <div class="form-group">
+              <label for="workUrlInput">Work Deliverable URL</label>
+              <input type="url" id="workUrlInput" class="form-control" placeholder="https://..." required />
+            </div>
+            <div class="form-group">
+              <label for="prUrlInput">Pull Request URL (Optional)</label>
+              <input type="url" id="prUrlInput" class="form-control" placeholder="https://github.com/..." />
+            </div>
+            <div class="form-group">
+              <label for="commitInput">Commit Hash / ID</label>
+              <input type="text" id="commitInput" class="form-control" placeholder="e.g. 7f3a9e1" required />
+            </div>
+            <div class="form-group">
+              <label for="noteInput">Completion Note</label>
+              <textarea id="noteInput" class="form-control" placeholder="Notes for review..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Deliverables</button>
+          </form>
+        </div>
+
+        <!-- My Engagements List -->
+        <div class="card">
+          <h2 class="card-title">📁 Engagements</h2>
+          <div id="engagementList" class="engagement-list">
+            <div class="text-center text-muted" style="padding: 20px 0;">
+              Connect your wallet to load engagements.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Panel: Active Engagement Detail & Timeline -->
+      <div class="flex-column">
+        <!-- Active Engagement Display -->
+        <div id="detailsCard" class="card">
+          <h2 class="card-title">🔍 Engagement Details</h2>
+          
+          <div id="noActiveSelection" class="text-center text-muted" style="padding: 60px 0;">
+            Select an engagement from the list to view status and actions.
+          </div>
+
+          <div id="activeSelectionDetails" class="hidden">
+            <h3 id="detailTitle" style="font-size: 1.4rem; margin-bottom: 12px;">Work Engagement Title</h3>
+            
+            <!-- State Machine Step Indicators -->
+            <div class="timeline-container">
+              <div class="timeline">
+                <div id="timelineProgress" class="timeline-progress"></div>
+                
+                <div class="timeline-step" id="stepCreated">
+                  <div class="step-node">1</div>
+                  <div class="step-label">Created</div>
+                </div>
+                <div class="timeline-step" id="stepFunded">
+                  <div class="step-node">2</div>
+                  <div class="step-label">Funded</div>
+                </div>
+                <div class="timeline-step" id="stepSubmitted">
+                  <div class="step-node">3</div>
+                  <div class="step-label">Submitted</div>
+                </div>
+                <div class="timeline-step" id="stepApproved">
+                  <div class="step-node">4</div>
+                  <div class="step-label">Approved</div>
+                </div>
+                <div class="timeline-step" id="stepCompleted">
+                  <div class="step-node">5</div>
+                  <div class="step-label">Completed</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Parameters Grid -->
+            <div class="detail-grid">
+              <div class="detail-block">
+                <div class="detail-label">Engagement ID</div>
+                <div id="detailId" class="detail-value font-weight-bold">#</div>
+              </div>
+              <div class="detail-block">
+                <div class="detail-label">Amount (Escrow)</div>
+                <div id="detailAmount" class="detail-value" style="color: var(--secondary); font-weight: bold;">0.00 XLM</div>
+              </div>
+              <div class="detail-block">
+                <div class="detail-label">Client</div>
+                <div id="detailClient" class="detail-value monospace">G...</div>
+              </div>
+              <div class="detail-block">
+                <div class="detail-label">Developer</div>
+                <div id="detailDeveloper" class="detail-value monospace">G...</div>
+              </div>
+              <div class="detail-block">
+                <div class="detail-label">Token Contract</div>
+                <div id="detailToken" class="detail-value monospace">CD...</div>
+              </div>
+              <div class="detail-block">
+                <div class="detail-label">Deadline</div>
+                <div id="detailDeadline" class="detail-value">UTC</div>
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div class="description-box">
+              <div class="detail-label">Task Description</div>
+              <div id="detailDescription" style="white-space: pre-wrap; font-size: 0.95rem;">-</div>
+            </div>
+
+            <!-- Proof of Work Submission Display -->
+            <div id="powDetailsBox" class="description-box hidden">
+              <div class="detail-label" style="color: var(--secondary); margin-bottom: 10px;">Submitted Deliverables</div>
+              <div class="form-group">
+                <label>Deliverable URL</label>
+                <div class="detail-value"><a id="detailWorkUrl" href="#" target="_blank" style="color: var(--primary);">Link</a></div>
+              </div>
+              <div class="form-group" id="detailPrGroup">
+                <label>Pull Request</label>
+                <div class="detail-value"><a id="detailPrUrl" href="#" target="_blank" style="color: var(--primary);">Link</a></div>
+              </div>
+              <div class="form-group">
+                <label>Commit Hash / Proof ID</label>
+                <div id="detailCommit" class="detail-value monospace">Hash</div>
+              </div>
+              <div class="form-group">
+                <label>Developer Completion Note</label>
+                <div id="detailNote" style="white-space: pre-wrap; font-size: 0.95rem;">-</div>
+              </div>
+            </div>
+
+            <!-- Contextual State Action Panel -->
+            <div id="actionPanel" style="margin-top: 24px;">
+              <!-- Client Action: Fund Escrow -->
+              <button id="fundEscrowBtn" class="btn btn-primary hidden" style="width: 100%;">
+                💵 Fund Escrow & Start Agreement
+              </button>
+
+              <!-- Client Action: Approve & Release Payment -->
+              <button id="approveReleaseBtn" class="btn btn-primary hidden" style="width: 100%;">
+                ✅ Approve Work & Release Escrow
+              </button>
+
+              <!-- Role Notice -->
+              <div id="roleNotice" class="text-center text-muted" style="font-size: 0.85rem; margin-top: 10px;">
+                Waiting for the other party to act.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transaction History Monitor -->
+        <div class="card tx-history-container">
+          <h2 class="card-title">📜 On-Chain Transaction Logs</h2>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Event / Action</th>
+                  <th>ID</th>
+                  <th>Tx Hash</th>
+                  <th>Explorer</th>
+                </tr>
+              </thead>
+              <tbody id="txLogBody">
+                <tr>
+                  <td colspan="4" class="text-center text-muted">No transactions recorded yet.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 60px; padding: 30px 0; border-top: 1px solid var(--border-glass); background: rgba(0,0,0,0.2);">
+    <div class="container text-center text-muted" style="font-size: 0.85rem;">
+      <p>Vouchsafe Escrow Portal · Connected to Stellar Testnet · Running on Soroban Smart Contracts</p>
+    </div>
+  </footer>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
