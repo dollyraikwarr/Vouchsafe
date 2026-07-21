@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Vouchsafe — On-Chain Work Escrow Payments on Stellar</title>
-  <meta name="description" content="Vouchsafe is a secure trust and escrow payment protocol for technical deliverables, powered by Soroban smart contracts on the Stellar Testnet." />
+  <title>Vouchsafe — Escrow That Only Pays When the Work Is Done</title>
+  <meta name="description" content="Vouchsafe is a trust and escrow payment protocol for technical deliverables, powered by a Soroban smart contract live on the Stellar Testnet." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
   <script type="importmap">
     {
@@ -39,246 +39,506 @@
       <a href="index.html" class="brand">
         <span class="brand-logo">🛡️</span> Vouchsafe
       </a>
+
+      <div class="nav-links">
+        <a href="#problem">Problem</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#protocol">Protocol</a>
+        <a href="#roadmap">Roadmap</a>
+        <a href="#faq">FAQ</a>
+      </div>
+
       <div class="wallet-section">
+        <a href="#app" class="btn btn-primary mkt-nav-launch">Launch App</a>
         <span id="networkBadge" class="wallet-badge hidden">Testnet</span>
         <span id="walletAddress" class="wallet-badge hidden">Not Connected</span>
-        <button id="connectWalletBtn" class="btn btn-primary">Connect Wallet</button>
+        <button id="connectWalletBtn" class="btn btn-secondary mkt-connect-btn">Connect Wallet</button>
       </div>
     </div>
   </nav>
 
-  <main class="container">
-    <!-- Transaction/Action Status Banner -->
-    <div id="statusBanner" class="status-banner hidden">
-      <div id="statusIcon" class="spinner"></div>
-      <div id="statusText">Processing transaction...</div>
-    </div>
+  <!-- ============================= -->
+  <!-- MARKETING SITE (new)          -->
+  <!-- ============================= -->
 
-    <div class="dashboard">
-      <!-- Left Panel: Lists and Creation Forms -->
-      <div class="flex-column">
-        <!-- Contract Configuration -->
-        <div class="card">
-          <h2 class="card-title">⚙️ Configuration</h2>
-          <div class="form-group" style="margin-bottom: 0;">
-            <label for="contractIdInput">Vouchsafe Contract ID</label>
-            <input type="text" id="contractIdInput" class="form-control" placeholder="Contract address (C...)" value="" />
+  <!-- Hero -->
+  <header class="mkt-hero" id="hero">
+    <div class="mkt-hero-grid" aria-hidden="true"></div>
+    <div class="container mkt-hero-inner">
+      <div class="mkt-hero-copy">
+        <p class="mkt-eyebrow">
+          <span class="mkt-eyebrow-dot"></span>
+          Live on Stellar Testnet · Soroban smart contract
+        </p>
+        <h1 class="mkt-h1">Escrow that only pays out<br>when the work is <em>actually</em> done.</h1>
+        <p class="mkt-hero-sub">
+          Fund a job on Stellar. The developer submits proof — a URL, a PR, a commit. You approve it, and payment releases automatically, in the same transaction. No invoices. No chasing. No trusting a stranger with your money first.
+        </p>
+        <div class="mkt-hero-ctas">
+          <a href="#app" class="btn btn-primary mkt-btn-lg">Launch App</a>
+          <a href="https://stellar.expert/explorer/testnet/contract/CBHLS5OKZWPYZTQA2DH66OJZMD6IZ7U54DVNM3DP5M4R3FSHOOTXMKTR" target="_blank" rel="noopener" class="btn btn-secondary mkt-btn-lg">View Contract ↗</a>
+        </div>
+        <p class="mkt-hero-footnote monospace">CBHLS5...OOTXMKTR · Stellar Testnet</p>
+      </div>
+
+      <div class="mkt-hero-widget">
+        <div class="mkt-terminal card">
+          <div class="mkt-terminal-head">
+            <div class="mkt-terminal-dots"><span></span><span></span><span></span></div>
+            <span class="mkt-terminal-title monospace">engagement.state</span>
+            <span class="mkt-terminal-flag">Illustrative simulation</span>
+          </div>
+
+          <div class="mkt-term-steps" id="mktTermSteps">
+            <div class="mkt-term-step" data-step="created"><span class="mkt-term-node"></span><span>Created</span></div>
+            <div class="mkt-term-step" data-step="funded"><span class="mkt-term-node"></span><span>Funded</span></div>
+            <div class="mkt-term-step" data-step="submitted"><span class="mkt-term-node"></span><span>Submitted</span></div>
+            <div class="mkt-term-step" data-step="approved"><span class="mkt-term-node"></span><span>Approved</span></div>
+            <div class="mkt-term-step" data-step="released"><span class="mkt-term-node"></span><span>Released</span></div>
+            <div class="mkt-term-step" data-step="completed"><span class="mkt-term-node"></span><span>Completed</span></div>
+          </div>
+
+          <div class="mkt-term-log monospace" id="mktTermLog" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Problem -->
+  <section class="mkt-section" id="problem">
+    <div class="container mkt-reveal">
+      <p class="mkt-eyebrow mkt-eyebrow-static">The problem</p>
+      <h2 class="mkt-h2">Getting paid for real work still runs on trust</h2>
+      <div class="mkt-problem-grid">
+        <div class="mkt-problem-card card">
+          <h3>If you're the developer</h3>
+          <p>You deliver first and invoice after. If the client stalls or disappears, you have no leverage and no record that says otherwise.</p>
+        </div>
+        <div class="mkt-problem-card card">
+          <h3>If you're the client</h3>
+          <p>You pay upfront and hope, or you route everything through a platform that takes a cut and decides on its own terms when money moves.</p>
+        </div>
+      </div>
+      <p class="mkt-problem-close">Vouchsafe replaces both with a state machine: an on-chain escrow that only two actions can move — the developer submitting proof, and the client approving it.</p>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="mkt-section" id="how-it-works">
+    <div class="container mkt-reveal">
+      <p class="mkt-eyebrow mkt-eyebrow-static">How it works</p>
+      <h2 class="mkt-h2">Four steps. One state machine. No exceptions.</h2>
+
+      <div class="mkt-steps">
+        <div class="mkt-step">
+          <span class="mkt-step-num">01</span>
+          <h3>Create</h3>
+          <p>The client defines the engagement — developer address, payment amount, token, and deadline.</p>
+        </div>
+        <div class="mkt-step">
+          <span class="mkt-step-num">02</span>
+          <h3>Fund</h3>
+          <p>Payment locks into the contract's on-chain escrow. Nobody can spend it until the state machine moves.</p>
+        </div>
+        <div class="mkt-step">
+          <span class="mkt-step-num">03</span>
+          <h3>Submit</h3>
+          <p>The developer records deliverable proof on-chain: a URL, a PR link, a commit hash, and a note.</p>
+        </div>
+        <div class="mkt-step">
+          <span class="mkt-step-num">04</span>
+          <h3>Approve</h3>
+          <p>The client approves. Payment releases to the developer automatically, in the same transaction.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Protocol / On-Chain Record -->
+  <section class="mkt-section" id="protocol">
+    <div class="container mkt-reveal">
+      <div class="mkt-protocol-grid">
+        <div class="mkt-protocol-copy">
+          <p class="mkt-eyebrow mkt-eyebrow-static">On-chain record</p>
+          <h2 class="mkt-h2">Every engagement is a permanent, queryable record</h2>
+          <p>
+            <code class="monospace mkt-inline-code">get_engagement()</code> returns exactly what happened — client, developer, amount, deliverable, and whether payment actually released. No summary, no interpretation.
+          </p>
+          <a href="https://stellar.expert/explorer/testnet/contract/CBHLS5OKZWPYZTQA2DH66OJZMD6IZ7U54DVNM3DP5M4R3FSHOOTXMKTR" target="_blank" rel="noopener" class="mkt-explorer-cta">
+            View the deployed contract on Stellar Testnet Explorer
+            <span class="monospace mkt-contract-id">CBHLS5OKZWPYZTQA2DH66OJZMD6IZ7U54DVNM3DP5M4R3FSHOOTXMKTR</span>
+            ↗
+          </a>
+        </div>
+
+        <div class="mkt-record card monospace">
+          <div class="mkt-record-head">
+            <span>get_engagement(482) <span class="mkt-contract-id">· example</span></span>
+            <span class="badge badge-completed">Completed</span>
+          </div>
+          <dl class="mkt-record-body">
+            <div><dt>id</dt><dd>482</dd></div>
+            <div><dt>client</dt><dd>GBLQ7...WT2NF</dd></div>
+            <div><dt>developer</dt><dd>GDXK2...RM4QP</dd></div>
+            <div><dt>token</dt><dd>CDLZFC...RMQQVU</dd></div>
+            <div><dt>amount</dt><dd>500.0000000</dd></div>
+            <div><dt>work_url</dt><dd>github.com/…/vouchsafe-api</dd></div>
+            <div><dt>work_pr_url</dt><dd>github.com/…/pull/118</dd></div>
+            <div><dt>work_commit</dt><dd>a1b2c3d4</dd></div>
+            <div><dt>status</dt><dd>Completed</dd></div>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Who it's for -->
+  <section class="mkt-section" id="who-its-for">
+    <div class="container mkt-reveal">
+      <p class="mkt-eyebrow mkt-eyebrow-static">Who it's for</p>
+      <h2 class="mkt-h2">Two roles. Two guarantees.</h2>
+      <div class="mkt-persona-grid">
+        <div class="mkt-persona card">
+          <span class="mkt-persona-tag">Clients</span>
+          <h3>Get proof before you pay, not after.</h3>
+          <p>Funds sit in escrow, not in someone's inbox. You only approve — and release payment — once the deliverable is actually in front of you.</p>
+        </div>
+        <div class="mkt-persona card">
+          <span class="mkt-persona-tag">Developers</span>
+          <h3>Get paid the moment your work is approved.</h3>
+          <p>No invoices, no follow-up emails, no "check's in the mail." Approval and payout happen in the same on-chain transaction.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Roadmap -->
+  <section class="mkt-section" id="roadmap">
+    <div class="container mkt-reveal">
+      <p class="mkt-eyebrow mkt-eyebrow-static">Roadmap</p>
+      <h2 class="mkt-h2">Building in public, honestly</h2>
+      <p class="mkt-roadmap-sub">Built for Stellar's Journey to Mastery. Here's exactly what's shipped, and what isn't yet.</p>
+
+      <div class="mkt-roadmap-grid">
+        <div class="mkt-roadmap-col card">
+          <h3 class="mkt-roadmap-heading mkt-roadmap-heading-live">
+            <span class="mkt-status-dot mkt-status-dot-live"></span>Live today
+          </h3>
+          <ul>
+            <li>Single-milestone escrow state machine</li>
+            <li>Deployed and running on Stellar Testnet</li>
+            <li>7 passing tests — happy path plus unauthorized-access, invalid-state, and double-release cases</li>
+            <li>Multi-wallet support via Stellar Wallets Kit</li>
+          </ul>
+        </div>
+        <div class="mkt-roadmap-col card">
+          <h3 class="mkt-roadmap-heading">
+            <span class="mkt-status-dot"></span>What's next
+          </h3>
+          <ul>
+            <li>Multi-milestone engagements</li>
+            <li>Dispute resolution and arbitration</li>
+            <li>Portable reputation built from completed-engagement history</li>
+            <li>Mainnet deployment</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="mkt-section" id="faq">
+    <div class="container mkt-reveal">
+      <p class="mkt-eyebrow mkt-eyebrow-static">FAQ</p>
+      <h2 class="mkt-h2">Straight answers</h2>
+
+      <div class="mkt-faq-list">
+        <div class="mkt-faq-item card">
+          <button class="mkt-faq-q" aria-expanded="false">
+            <span>What happens if the client never approves?</span>
+            <span class="mkt-faq-icon">+</span>
+          </button>
+          <div class="mkt-faq-a">
+            <p>The funds stay locked in escrow. There's no automatic timeout or refund yet — dispute resolution is on the roadmap, not shipped. Today, Vouchsafe enforces the happy path: submit proof, then get approved.</p>
           </div>
         </div>
-
-        <!-- Role Switching Tabs -->
-        <div class="role-selectors">
-          <button id="clientRoleBtn" class="role-btn active">Client View</button>
-          <button id="developerRoleBtn" class="role-btn">Developer View</button>
+        <div class="mkt-faq-item card">
+          <button class="mkt-faq-q" aria-expanded="false">
+            <span>What token can I use?</span>
+            <span class="mkt-faq-icon">+</span>
+          </button>
+          <div class="mkt-faq-a">
+            <p>Any Stellar Asset Contract token, including native XLM. You supply the token address when you create the engagement.</p>
+          </div>
         </div>
-
-        <!-- Create Engagement Form (Only visible to Client) -->
-        <div id="clientCreateCard" class="card">
-          <h2 class="card-title">🆕 Create Engagement</h2>
-          <form id="createEngagementForm">
-            <div class="form-group">
-              <label for="devAddressInput">Developer Address</label>
-              <input type="text" id="devAddressInput" class="form-control" placeholder="G..." required />
-            </div>
-            <div class="form-group">
-              <label for="titleInput">Work Title</label>
-              <input type="text" id="titleInput" class="form-control" placeholder="e.g. Implement API Endpoint" required />
-            </div>
-            <div class="form-group">
-              <label for="descInput">Detailed Description</label>
-              <textarea id="descInput" class="form-control" placeholder="Specify deliverables and requirements..." required></textarea>
-            </div>
-            <div class="form-group">
-              <label for="amountInput">Payment Amount (XLM)</label>
-              <input type="number" id="amountInput" class="form-control" placeholder="100" min="1" step="any" required />
-            </div>
-            <div class="form-group">
-              <label for="tokenInput">Stellar Asset Address (SAC)</label>
-              <input type="text" id="tokenInput" class="form-control" placeholder="CD..." required />
-            </div>
-            <div class="form-group">
-              <label for="deadlineInput">Deadline</label>
-              <input type="datetime-local" id="deadlineInput" class="form-control" required />
-            </div>
-            <button type="submit" class="btn btn-primary" style="width: 100%;">Create Agreement</button>
-          </form>
+        <div class="mkt-faq-item card">
+          <button class="mkt-faq-q" aria-expanded="false">
+            <span>Is this on Mainnet?</span>
+            <span class="mkt-faq-icon">+</span>
+          </button>
+          <div class="mkt-faq-a">
+            <p>No — Testnet only right now. The contract is live and verifiable, but Mainnet deployment is on the roadmap.</p>
+          </div>
         </div>
-
-        <!-- Submit Work Form (Only visible to Developer when a funded engagement is selected) -->
-        <div id="developerSubmitCard" class="card hidden">
-          <h2 class="card-title">📤 Submit Work Proof</h2>
-          <form id="submitWorkForm">
-            <div class="form-group">
-              <label for="workUrlInput">Work Deliverable URL</label>
-              <input type="url" id="workUrlInput" class="form-control" placeholder="https://..." required />
-            </div>
-            <div class="form-group">
-              <label for="prUrlInput">Pull Request URL (Optional)</label>
-              <input type="url" id="prUrlInput" class="form-control" placeholder="https://github.com/..." />
-            </div>
-            <div class="form-group">
-              <label for="commitInput">Commit Hash / ID</label>
-              <input type="text" id="commitInput" class="form-control" placeholder="e.g. 7f3a9e1" required />
-            </div>
-            <div class="form-group">
-              <label for="noteInput">Completion Note</label>
-              <textarea id="noteInput" class="form-control" placeholder="Notes for review..." required></textarea>
-            </div>
-            <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Deliverables</button>
-          </form>
-        </div>
-
-        <!-- My Engagements List -->
-        <div class="card">
-          <h2 class="card-title">📁 Engagements</h2>
-          <div id="engagementList" class="engagement-list">
-            <div class="text-center text-muted" style="padding: 20px 0;">
-              Connect your wallet to load engagements.
-            </div>
+        <div class="mkt-faq-item card">
+          <button class="mkt-faq-q" aria-expanded="false">
+            <span>What wallets are supported?</span>
+            <span class="mkt-faq-icon">+</span>
+          </button>
+          <div class="mkt-faq-a">
+            <p>Vouchsafe connects through Stellar Wallets Kit, which supports multiple wallets — not just Freighter.</p>
           </div>
         </div>
       </div>
+    </div>
+  </section>
 
-      <!-- Right Panel: Active Engagement Detail & Timeline -->
-      <div class="flex-column">
-        <!-- Active Engagement Display -->
-        <div id="detailsCard" class="card">
-          <h2 class="card-title">🔍 Engagement Details</h2>
-          
-          <div id="noActiveSelection" class="text-center text-muted" style="padding: 60px 0;">
-            Select an engagement from the list to view status and actions.
+  <!-- Final CTA -->
+  <section class="mkt-final-cta">
+    <div class="container mkt-final-cta-inner mkt-reveal">
+      <h2 class="mkt-h2">Fund it. Prove it. Get paid.</h2>
+      <p>The contract's live on Testnet. Connect a wallet and try the real state machine below.</p>
+      <a href="#app" class="btn btn-primary mkt-btn-lg">Launch App</a>
+    </div>
+  </section>
+
+  <!-- ============================= -->
+  <!-- EXISTING DASHBOARD (untouched) -->
+  <!-- ============================= -->
+  <section id="app">
+    <main class="container">
+      <!-- Transaction/Action Status Banner -->
+      <div id="statusBanner" class="status-banner hidden">
+        <div id="statusIcon" class="spinner"></div>
+        <div id="statusText">Processing transaction...</div>
+      </div>
+
+      <div class="dashboard">
+        <!-- Left Panel: Lists and Creation Forms -->
+        <div class="flex-column">
+          <!-- Contract Configuration -->
+          <div class="card">
+            <h2 class="card-title">⚙️ Configuration</h2>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label for="contractIdInput">Vouchsafe Contract ID</label>
+              <input type="text" id="contractIdInput" class="form-control" placeholder="Contract address (C...)" value="" />
+            </div>
           </div>
 
-          <div id="activeSelectionDetails" class="hidden">
-            <h3 id="detailTitle" style="font-size: 1.4rem; margin-bottom: 12px;">Work Engagement Title</h3>
+          <!-- Role Switching Tabs -->
+          <div class="role-selectors">
+            <button id="clientRoleBtn" class="role-btn active">Client View</button>
+            <button id="developerRoleBtn" class="role-btn">Developer View</button>
+          </div>
+
+          <!-- Create Engagement Form (Only visible to Client) -->
+          <div id="clientCreateCard" class="card">
+            <h2 class="card-title">🆕 Create Engagement</h2>
+            <form id="createEngagementForm">
+              <div class="form-group">
+                <label for="devAddressInput">Developer Address</label>
+                <input type="text" id="devAddressInput" class="form-control" placeholder="G..." required />
+              </div>
+              <div class="form-group">
+                <label for="titleInput">Work Title</label>
+                <input type="text" id="titleInput" class="form-control" placeholder="e.g. Implement API Endpoint" required />
+              </div>
+              <div class="form-group">
+                <label for="descInput">Detailed Description</label>
+                <textarea id="descInput" class="form-control" placeholder="Specify deliverables and requirements..." required></textarea>
+              </div>
+              <div class="form-group">
+                <label for="amountInput">Payment Amount (XLM)</label>
+                <input type="number" id="amountInput" class="form-control" placeholder="100" min="1" step="any" required />
+              </div>
+              <div class="form-group">
+                <label for="tokenInput">Stellar Asset Address (SAC)</label>
+                <input type="text" id="tokenInput" class="form-control" placeholder="CD..." required />
+              </div>
+              <div class="form-group">
+                <label for="deadlineInput">Deadline</label>
+                <input type="datetime-local" id="deadlineInput" class="form-control" required />
+              </div>
+              <button type="submit" class="btn btn-primary" style="width: 100%;">Create Agreement</button>
+            </form>
+          </div>
+
+          <!-- Submit Work Form (Only visible to Developer when a funded engagement is selected) -->
+          <div id="developerSubmitCard" class="card hidden">
+            <h2 class="card-title">📤 Submit Work Proof</h2>
+            <form id="submitWorkForm">
+              <div class="form-group">
+                <label for="workUrlInput">Work Deliverable URL</label>
+                <input type="url" id="workUrlInput" class="form-control" placeholder="https://..." required />
+              </div>
+              <div class="form-group">
+                <label for="prUrlInput">Pull Request URL (Optional)</label>
+                <input type="url" id="prUrlInput" class="form-control" placeholder="https://github.com/..." />
+              </div>
+              <div class="form-group">
+                <label for="commitInput">Commit Hash / ID</label>
+                <input type="text" id="commitInput" class="form-control" placeholder="e.g. 7f3a9e1" required />
+              </div>
+              <div class="form-group">
+                <label for="noteInput">Completion Note</label>
+                <textarea id="noteInput" class="form-control" placeholder="Notes for review..." required></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Deliverables</button>
+            </form>
+          </div>
+
+          <!-- My Engagements List -->
+          <div class="card">
+            <h2 class="card-title">📁 Engagements</h2>
+            <div id="engagementList" class="engagement-list">
+              <div class="text-center text-muted" style="padding: 20px 0;">
+                Connect your wallet to load engagements.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Panel: Active Engagement Detail & Timeline -->
+        <div class="flex-column">
+          <!-- Active Engagement Display -->
+          <div id="detailsCard" class="card">
+            <h2 class="card-title">🔍 Engagement Details</h2>
             
-            <!-- State Machine Step Indicators -->
-            <div class="timeline-container">
-              <div class="timeline">
-                <div id="timelineProgress" class="timeline-progress"></div>
-                
-                <div class="timeline-step" id="stepCreated">
-                  <div class="step-node">1</div>
-                  <div class="step-label">Created</div>
-                </div>
-                <div class="timeline-step" id="stepFunded">
-                  <div class="step-node">2</div>
-                  <div class="step-label">Funded</div>
-                </div>
-                <div class="timeline-step" id="stepSubmitted">
-                  <div class="step-node">3</div>
-                  <div class="step-label">Submitted</div>
-                </div>
-                <div class="timeline-step" id="stepApproved">
-                  <div class="step-node">4</div>
-                  <div class="step-label">Approved</div>
-                </div>
-                <div class="timeline-step" id="stepCompleted">
-                  <div class="step-node">5</div>
-                  <div class="step-label">Completed</div>
-                </div>
-              </div>
+            <div id="noActiveSelection" class="text-center text-muted" style="padding: 60px 0;">
+              Select an engagement from the list to view status and actions.
             </div>
 
-            <!-- Parameters Grid -->
-            <div class="detail-grid">
-              <div class="detail-block">
-                <div class="detail-label">Engagement ID</div>
-                <div id="detailId" class="detail-value font-weight-bold">#</div>
+            <div id="activeSelectionDetails" class="hidden">
+              <h3 id="detailTitle" style="font-size: 1.4rem; margin-bottom: 12px;">Work Engagement Title</h3>
+              
+              <!-- State Machine Step Indicators -->
+              <div class="timeline-container">
+                <div class="timeline">
+                  <div id="timelineProgress" class="timeline-progress"></div>
+                  
+                  <div class="timeline-step" id="stepCreated">
+                    <div class="step-node">1</div>
+                    <div class="step-label">Created</div>
+                  </div>
+                  <div class="timeline-step" id="stepFunded">
+                    <div class="step-node">2</div>
+                    <div class="step-label">Funded</div>
+                  </div>
+                  <div class="timeline-step" id="stepSubmitted">
+                    <div class="step-node">3</div>
+                    <div class="step-label">Submitted</div>
+                  </div>
+                  <div class="timeline-step" id="stepApproved">
+                    <div class="step-node">4</div>
+                    <div class="step-label">Approved</div>
+                  </div>
+                  <div class="timeline-step" id="stepCompleted">
+                    <div class="step-node">5</div>
+                    <div class="step-label">Completed</div>
+                  </div>
+                </div>
               </div>
-              <div class="detail-block">
-                <div class="detail-label">Amount (Escrow)</div>
-                <div id="detailAmount" class="detail-value" style="color: var(--secondary); font-weight: bold;">0.00 XLM</div>
-              </div>
-              <div class="detail-block">
-                <div class="detail-label">Client</div>
-                <div id="detailClient" class="detail-value monospace">G...</div>
-              </div>
-              <div class="detail-block">
-                <div class="detail-label">Developer</div>
-                <div id="detailDeveloper" class="detail-value monospace">G...</div>
-              </div>
-              <div class="detail-block">
-                <div class="detail-label">Token Contract</div>
-                <div id="detailToken" class="detail-value monospace">CD...</div>
-              </div>
-              <div class="detail-block">
-                <div class="detail-label">Deadline</div>
-                <div id="detailDeadline" class="detail-value">UTC</div>
-              </div>
-            </div>
 
-            <!-- Description -->
-            <div class="description-box">
-              <div class="detail-label">Task Description</div>
-              <div id="detailDescription" style="white-space: pre-wrap; font-size: 0.95rem;">-</div>
-            </div>
-
-            <!-- Proof of Work Submission Display -->
-            <div id="powDetailsBox" class="description-box hidden">
-              <div class="detail-label" style="color: var(--secondary); margin-bottom: 10px;">Submitted Deliverables</div>
-              <div class="form-group">
-                <label>Deliverable URL</label>
-                <div class="detail-value"><a id="detailWorkUrl" href="#" target="_blank" style="color: var(--primary);">Link</a></div>
+              <!-- Parameters Grid -->
+              <div class="detail-grid">
+                <div class="detail-block">
+                  <div class="detail-label">Engagement ID</div>
+                  <div id="detailId" class="detail-value font-weight-bold">#</div>
+                </div>
+                <div class="detail-block">
+                  <div class="detail-label">Amount (Escrow)</div>
+                  <div id="detailAmount" class="detail-value" style="color: var(--secondary); font-weight: bold;">0.00 XLM</div>
+                </div>
+                <div class="detail-block">
+                  <div class="detail-label">Client</div>
+                  <div id="detailClient" class="detail-value monospace">G...</div>
+                </div>
+                <div class="detail-block">
+                  <div class="detail-label">Developer</div>
+                  <div id="detailDeveloper" class="detail-value monospace">G...</div>
+                </div>
+                <div class="detail-block">
+                  <div class="detail-label">Token Contract</div>
+                  <div id="detailToken" class="detail-value monospace">CD...</div>
+                </div>
+                <div class="detail-block">
+                  <div class="detail-label">Deadline</div>
+                  <div id="detailDeadline" class="detail-value">UTC</div>
+                </div>
               </div>
-              <div class="form-group" id="detailPrGroup">
-                <label>Pull Request</label>
-                <div class="detail-value"><a id="detailPrUrl" href="#" target="_blank" style="color: var(--primary);">Link</a></div>
-              </div>
-              <div class="form-group">
-                <label>Commit Hash / Proof ID</label>
-                <div id="detailCommit" class="detail-value monospace">Hash</div>
-              </div>
-              <div class="form-group">
-                <label>Developer Completion Note</label>
-                <div id="detailNote" style="white-space: pre-wrap; font-size: 0.95rem;">-</div>
-              </div>
-            </div>
 
-            <!-- Contextual State Action Panel -->
-            <div id="actionPanel" style="margin-top: 24px;">
-              <!-- Client Action: Fund Escrow -->
-              <button id="fundEscrowBtn" class="btn btn-primary hidden" style="width: 100%;">
-                💵 Fund Escrow & Start Agreement
-              </button>
+              <!-- Description -->
+              <div class="description-box">
+                <div class="detail-label">Task Description</div>
+                <div id="detailDescription" style="white-space: pre-wrap; font-size: 0.95rem;">-</div>
+              </div>
 
-              <!-- Client Action: Approve & Release Payment -->
-              <button id="approveReleaseBtn" class="btn btn-primary hidden" style="width: 100%;">
-                ✅ Approve Work & Release Escrow
-              </button>
+              <!-- Proof of Work Submission Display -->
+              <div id="powDetailsBox" class="description-box hidden">
+                <div class="detail-label" style="color: var(--secondary); margin-bottom: 10px;">Submitted Deliverables</div>
+                <div class="form-group">
+                  <label>Deliverable URL</label>
+                  <div class="detail-value"><a id="detailWorkUrl" href="#" target="_blank" style="color: var(--primary);">Link</a></div>
+                </div>
+                <div class="form-group" id="detailPrGroup">
+                  <label>Pull Request</label>
+                  <div class="detail-value"><a id="detailPrUrl" href="#" target="_blank" style="color: var(--primary);">Link</a></div>
+                </div>
+                <div class="form-group">
+                  <label>Commit Hash / Proof ID</label>
+                  <div id="detailCommit" class="detail-value monospace">Hash</div>
+                </div>
+                <div class="form-group">
+                  <label>Developer Completion Note</label>
+                  <div id="detailNote" style="white-space: pre-wrap; font-size: 0.95rem;">-</div>
+                </div>
+              </div>
 
-              <!-- Role Notice -->
-              <div id="roleNotice" class="text-center text-muted" style="font-size: 0.85rem; margin-top: 10px;">
-                Waiting for the other party to act.
+              <!-- Contextual State Action Panel -->
+              <div id="actionPanel" style="margin-top: 24px;">
+                <!-- Client Action: Fund Escrow -->
+                <button id="fundEscrowBtn" class="btn btn-primary hidden" style="width: 100%;">
+                  💵 Fund Escrow & Start Agreement
+                </button>
+
+                <!-- Client Action: Approve & Release Payment -->
+                <button id="approveReleaseBtn" class="btn btn-primary hidden" style="width: 100%;">
+                  ✅ Approve Work & Release Escrow
+                </button>
+
+                <!-- Role Notice -->
+                <div id="roleNotice" class="text-center text-muted" style="font-size: 0.85rem; margin-top: 10px;">
+                  Waiting for the other party to act.
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Transaction History Monitor -->
-        <div class="card tx-history-container">
-          <h2 class="card-title">📜 On-Chain Transaction Logs</h2>
-          <div class="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Event / Action</th>
-                  <th>ID</th>
-                  <th>Tx Hash</th>
-                  <th>Explorer</th>
-                </tr>
-              </thead>
-              <tbody id="txLogBody">
-                <tr>
-                  <td colspan="4" class="text-center text-muted">No transactions recorded yet.</td>
-                </tr>
-              </tbody>
-            </table>
+          <!-- Transaction History Monitor -->
+          <div class="card tx-history-container">
+            <h2 class="card-title">📜 On-Chain Transaction Logs</h2>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Event / Action</th>
+                    <th>ID</th>
+                    <th>Tx Hash</th>
+                    <th>Explorer</th>
+                  </tr>
+                </thead>
+                <tbody id="txLogBody">
+                  <tr>
+                    <td colspan="4" class="text-center text-muted">No transactions recorded yet.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </main>
+    </main>
+  </section>
 
   <footer style="margin-top: 60px; padding: 30px 0; border-top: 1px solid var(--border-glass); background: rgba(0,0,0,0.2);">
     <div class="container text-center text-muted" style="font-size: 0.85rem;">
@@ -286,6 +546,7 @@
     </div>
   </footer>
 
+  <script src="marketing.js"></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>
