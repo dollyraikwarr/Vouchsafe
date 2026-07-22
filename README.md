@@ -6,17 +6,10 @@
 
 ## 🏆 Stellar Journey to Mastery — Progression Index
 
-Vouchsafe is developed following the Stellar Journey to Mastery curriculum. Below is the current project status and links to detailed documentation for each belt level:
-
 | Belt Level | Milestone Title | Status | Documentation Link |
 |------------|-----------------|--------|--------------------|
 | ⚪ **White Belt** (Level 1) | Foundation & Core Escrow Contract | ✅ **COMPLETED** | [Read White Belt Specs ↗](docs/README_WHITE_BELT.md) |
 | 🟡 **Yellow Belt** (Level 2) | Multi-Wallet Architecture & Live Events | ✅ **COMPLETED** | [Read Yellow Belt Specs ↗](docs/README_YELLOW_BELT.md) |
-| 🟠 **Orange Belt** (Level 3) | Multi-Milestone Escrow & Arbitration | 🚧 **IN PROGRESS** | [Read Orange Belt Specs ↗](docs/README_ORANGE_BELT.md) |
-| 🟢 **Green Belt** (Level 4) | Production MVP & 10 Testnet Users | 📅 **PLANNED** | [Read Green Belt Specs ↗](docs/README_GREEN_BELT.md) |
-| 🔵 **Blue Belt** (Level 5) | Scaling to 50 Users, Pitch & Demo | 📅 **PLANNED** | [Read Blue Belt Specs ↗](docs/README_BLUE_BELT.md) |
-| ⚫ **Black Belt** (Level 6) | Stellar Mainnet Launch & Security Audit | 📅 **PLANNED** | [Read Black Belt Specs ↗](docs/README_BLACK_BELT.md) |
-| 🏆 **Master Belt** (Level 7) | Web3 Startup Track & Ecosystem Impact | 📅 **PLANNED** | [Read Master Belt Specs ↗](docs/README_MASTER_BELT.md) |
 
 ---
 
@@ -140,14 +133,6 @@ cargo test
 
 ---
 
-## 9. Project Roadmap Summary
-
-```
-[⚪ Level 1: White Belt] ──► [🟡 Level 2: Yellow Belt] ──► [🟠 Level 3: Orange Belt]
-     (COMPLETED)                  (COMPLETED)                  (IN PROGRESS)
-                                                                     │
-[🏆 Level 7: Master Belt] ◄── [⚫ Level 6: Black Belt] ◄── [🔵 Level 5: Blue Belt] ◄── [🟢 Level 4: Green Belt]
-     (PLANNED)                    (PLANNED)                   (PLANNED)                   (PLANNED)
-```
-
-For detailed specifications, architectural diagrams, and verification evidence for each level, refer to the [docs/](docs/) directory.
+For detailed specifications, architectural diagrams, and verification evidence for completed levels, refer to:
+- [⚪ White Belt Documentation (Level 1)](docs/README_WHITE_BELT.md)
+- [🟡 Yellow Belt Documentation (Level 2)](docs/README_YELLOW_BELT.md)
