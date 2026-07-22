@@ -3,6 +3,7 @@
 > **Belt Level**: 🟡 Yellow Belt  
 > **Status**: ✅ COMPLETED  
 > **Target Network**: Stellar Testnet  
+> **Live Demo**: [https://vouchsafe-eight.vercel.app ↗](https://vouchsafe-eight.vercel.app)  
 
 ---
 
@@ -211,3 +212,4 @@ The Yellow Belt functionality is committed in the repository history:
 ## 14. Next Milestone Progression
 
 With Yellow Belt fully implemented and verified, the next milestone is **Orange Belt (Level 3)**, focusing on multi-milestone engagements, dispute arbitration, and expanded mini-dApp capabilities.
+

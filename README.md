@@ -2,6 +2,8 @@
 
 > A Soroban-powered smart contract escrow protocol on Stellar Testnet that pays technical contributors only after verifiable proof of work is submitted and client-approved.
 
+🌐 **Live Demo**: [https://vouchsafe-eight.vercel.app ↗](https://vouchsafe-eight.vercel.app)
+
 ---
 
 ## 🏆 Stellar Journey to Mastery — Progression Index
@@ -136,3 +138,4 @@ cargo test
 For detailed specifications, architectural diagrams, and verification evidence for completed levels, refer to:
 - [⚪ White Belt Documentation (Level 1)](docs/README_WHITE_BELT.md)
 - [🟡 Yellow Belt Documentation (Level 2)](docs/README_YELLOW_BELT.md)
+
