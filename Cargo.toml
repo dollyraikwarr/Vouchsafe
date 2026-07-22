@@ -1,7 +1,8 @@
-[workspace]
+﻿[workspace]
 resolver = "2"
 members = [
     "contracts/vouchsafe",
+    "contracts/vault",
 ]
 
 [profile.release]
