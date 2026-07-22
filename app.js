@@ -317,7 +317,9 @@ async function loadEngagements() {
 }
 
 // Render Engagements List
+// Render Engagements List & Update Metrics
 function renderEngagements() {
+  updateMetrics();
   const listEl = $("engagementList");
   listEl.innerHTML = "";
 
@@ -362,12 +364,28 @@ function renderEngagements() {
   });
 }
 
+function updateMetrics() {
+  const activeCount = engagementsList.filter(e => getStatusString(e.status) !== "Completed").length;
+  const awaitingCount = engagementsList.filter(e => {
+    const s = getStatusString(e.status);
+    return currentRole === "client" ? (s === "Created" || s === "WorkSubmitted") : (s === "Funded");
+  }).length;
+  const completedCount = engagementsList.filter(e => getStatusString(e.status) === "Completed").length;
+  const totalEscrowed = engagementsList
+    .filter(e => ["Funded", "WorkSubmitted", "Approved"].includes(getStatusString(e.status)))
+    .reduce((sum, e) => sum + Number(stroopsToXlm(e.amount)), 0);
+
+  if ($("statActiveEngagements")) $("statActiveEngagements").textContent = activeCount;
+  if ($("statAwaitingAction")) $("statAwaitingAction").textContent = awaitingCount;
+  if ($("statCompleted")) $("statCompleted").textContent = completedCount;
+  if ($("statTotalEscrowed")) $("statTotalEscrowed").textContent = `${totalEscrowed.toFixed(2)} XLM`;
+}
+
 function truncateAddr(addr) {
   return `${addr.slice(0, 5)}...${addr.slice(-5)}`;
 }
 
 function getStatusString(status) {
-  // Check if status is object like { name: "Created" } or string or number
   if (status && typeof status === "object") {
     return status.name || Object.keys(status)[0] || "Created";
   }
@@ -414,16 +432,18 @@ function renderEngagementDetails() {
   
   steps.forEach((stepId, idx) => {
     const el = $(stepId);
-    el.classList.remove("active", "completed");
-    if (idx === activeIdx) {
-      el.classList.add("active");
-    } else if (idx < activeIdx) {
-      el.classList.add("completed");
+    if (el) {
+      el.classList.remove("active", "completed");
+      if (idx === activeIdx) {
+        el.classList.add("active");
+      } else if (idx < activeIdx) {
+        el.classList.add("completed");
+      }
     }
   });
 
   const progressPercent = (activeIdx / (steps.length - 1)) * 100;
-  $("timelineProgress").style.width = `${progressPercent}%`;
+  if ($("timelineProgress")) $("timelineProgress").style.width = `${progressPercent}%`;
 
   // Render proof of work block if submitted
   const statusStr = getStatusString(e.status);
@@ -444,16 +464,22 @@ function renderEngagementDetails() {
     $("powDetailsBox").classList.add("hidden");
   }
 
-  // Update action buttons contextually
+  // Contextual action panels and confirmation states
   $("fundEscrowBtn").classList.add("hidden");
   $("approveReleaseBtn").classList.add("hidden");
+  if ($("fundActionConfirm")) $("fundActionConfirm").classList.add("hidden");
+  if ($("approveActionConfirm")) $("approveActionConfirm").classList.add("hidden");
   $("developerSubmitCard").classList.add("hidden");
   $("roleNotice").textContent = "";
 
   if (currentRole === "client") {
     if (statusStr === "Created") {
+      if ($("fundActionConfirm")) $("fundActionConfirm").classList.remove("hidden");
+      if ($("fundConfirmText")) $("fundConfirmText").textContent = `You are about to lock ${stroopsToXlm(e.amount)} XLM in Soroban escrow for Engagement #${e.id}.`;
       $("fundEscrowBtn").classList.remove("hidden");
     } else if (statusStr === "WorkSubmitted") {
+      if ($("approveActionConfirm")) $("approveActionConfirm").classList.remove("hidden");
+      if ($("approveConfirmText")) $("approveConfirmText").textContent = `Approving this deliverable will instantly release ${stroopsToXlm(e.amount)} XLM to developer (${truncateAddr(e.developer)}).`;
       $("approveReleaseBtn").classList.remove("hidden");
     } else {
       $("roleNotice").textContent = `Status: ${statusStr}. Waiting for developer deliverables.`;
@@ -502,7 +528,6 @@ $("createEngagementForm").addEventListener("submit", async (evt) => {
     $("titleInput").value = "";
     $("descInput").value = "";
     $("amountInput").value = "";
-    $("tokenInput").value = "";
     $("deadlineInput").value = "";
 
     await loadEngagements();
@@ -524,7 +549,6 @@ $("fundEscrowBtn").addEventListener("click", async () => {
     showStatus("✅ Escrow funded and active!", "success", `https://stellar.expert/explorer/testnet/tx/${result.hash}`);
     
     await loadEngagements();
-    // Select same item
     selectedEngagement = engagementsList.find(e => e.id === selectedEngagement.id);
     renderEngagementDetails();
   } catch (err) {
@@ -611,6 +635,36 @@ $("developerRoleBtn").addEventListener("click", () => {
   renderEngagementDetails();
 });
 
+// Sidebar Tab Switching
+function switchTab(tabId) {
+  const tabs = ["tabOverview", "tabEngagements", "tabActivity"];
+  const btns = ["navOverviewBtn", "navEngagementsBtn", "navActivityBtn"];
+  
+  tabs.forEach((t, i) => {
+    const tabEl = $(t);
+    const btnEl = $(btns[i]);
+    if (tabEl) {
+      if (t === tabId) {
+        tabEl.classList.remove("hidden");
+      } else {
+        tabEl.classList.add("hidden");
+      }
+    }
+    if (btnEl) {
+      if (t === tabId) {
+        btnEl.classList.add("active");
+      } else {
+        btnEl.classList.remove("active");
+      }
+    }
+  });
+}
+
+if ($("navOverviewBtn")) $("navOverviewBtn").addEventListener("click", () => switchTab("tabOverview"));
+if ($("navEngagementsBtn")) $("navEngagementsBtn").addEventListener("click", () => switchTab("tabEngagements"));
+if ($("navActivityBtn")) $("navActivityBtn").addEventListener("click", () => switchTab("tabActivity"));
+if ($("quickCreateBtn")) $("quickCreateBtn").addEventListener("click", () => switchTab("tabEngagements"));
+
 // Setup input change event to reload list
 $("contractIdInput").addEventListener("change", () => {
   loadEngagements();
@@ -643,13 +697,12 @@ function startOnChainEventPolling() {
       if (response.events && response.events.length > 0) {
         response.events.forEach((evt) => {
           const topics = evt.topic.map((t) => StellarSdk.scValToNative(t));
-          const type = topics[0]; // e.g. "created", "funded", "submitted", "approved", "released", "completed"
+          const type = topics[0];
           const id = topics[1];
 
           logOnChainTx(`${type.toUpperCase()} Event`, evt.txHash);
         });
         
-        // Refresh active details
         await loadEngagements();
         if (selectedEngagement) {
           selectedEngagement = engagementsList.find(e => e.id === selectedEngagement.id);
@@ -665,3 +718,4 @@ function startOnChainEventPolling() {
 // Wire Connect/Disconnect Buttons
 $("connectWalletBtn").addEventListener("click", connectWallet);
 $("disconnectWalletBtn").addEventListener("click", disconnectWallet);
+
