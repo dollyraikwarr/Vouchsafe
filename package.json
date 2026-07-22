@@ -1,8 +1,11 @@
-{
+﻿{
   "name": "vouchsafe",
   "version": "1.0.0",
   "description": "Vouchsafe - On-chain work escrow payment protocol on Stellar",
   "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  },
   "dependencies": {
     "@stellar/freighter-api": "^2.0.0",
     "@stellar/stellar-sdk": "^14.0.0",
