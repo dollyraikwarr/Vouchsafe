@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Vouchsafe â€” Technical Escrow Infrastructure on Stellar</title>
+  <title>Vouchsafe — Technical Escrow Infrastructure on Stellar</title>
   <meta name="description" content="Vouchsafe is a trust and escrow payment protocol for technical deliverables, powered by Soroban smart contracts on Stellar Testnet." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -46,13 +46,31 @@
       </nav>
 
       <div class="header-actions">
-        <span id="networkBadge" class="wallet-badge hidden">
-          <span class="network-dot"></span> Stellar Testnet
+        <span id="networkBadge" class="network-badge hidden">
+          <span class="network-dot"></span> Testnet
         </span>
-        <span id="userBalance" class="wallet-badge hidden">â€” XLM</span>
-        <span id="walletAddress" class="wallet-badge hidden">Not Connected</span>
-        <button id="connectWalletBtn" class="btn btn-primary">Connect Wallet</button>
-        <button id="disconnectWalletBtn" class="btn btn-outline hidden">Disconnect</button>
+
+        <!-- Client Wallet Slot -->
+        <div class="wallet-slot" id="clientSlot">
+          <div class="wallet-slot-label">Client</div>
+          <div class="wallet-slot-address" id="clientWalletAddress">Not Connected</div>
+          <div class="wallet-slot-balance hidden" id="clientWalletBadge"><span id="clientWalletBalance">— XLM</span></div>
+          <button id="connectClientBtn" class="btn btn-sm btn-primary">Connect</button>
+          <button id="disconnectClientBtn" class="btn btn-sm btn-outline hidden">✕</button>
+        </div>
+
+        <!-- Developer Wallet Slot -->
+        <div class="wallet-slot" id="developerSlot">
+          <div class="wallet-slot-label">Developer</div>
+          <div class="wallet-slot-address" id="developerWalletAddress">Not Connected</div>
+          <div class="wallet-slot-balance hidden" id="developerWalletBadge"><span id="developerWalletBalance">— XLM</span></div>
+          <button id="connectDeveloperBtn" class="btn btn-sm btn-primary">Connect</button>
+          <button id="disconnectDeveloperBtn" class="btn btn-sm btn-outline hidden">✕</button>
+        </div>
+
+        <!-- Legacy hidden buttons kept for backward compat -->
+        <button id="connectWalletBtn" class="hidden"></button>
+        <button id="disconnectWalletBtn" class="hidden"></button>
       </div>
     </div>
   </header>
@@ -431,10 +449,27 @@
 
     <!-- Main Content Workspace -->
     <main class="app-main">
-      <!-- Status Feedback Banner -->
+      <!-- Transaction Status Machine Banner -->
       <div id="statusBanner" class="status-banner hidden">
-        <div id="statusIcon" class="spinner"></div>
-        <div id="statusText">Processing transaction...</div>
+        <div class="status-banner-top">
+          <div id="statusIcon" class="spinner"></div>
+          <div id="statusText">Processing transaction...</div>
+        </div>
+        <!-- Lifecycle step indicator -->
+        <div id="txStateSteps" class="tx-steps">
+          <div class="tx-step" data-step="0">🔐 Wallet</div>
+          <div class="tx-step-arrow">›</div>
+          <div class="tx-step" data-step="1">📡 Submit</div>
+          <div class="tx-step-arrow">›</div>
+          <div class="tx-step" data-step="2">⏳ Confirm</div>
+          <div class="tx-step-arrow">›</div>
+          <div class="tx-step" data-step="3">✅ Done</div>
+        </div>
+        <!-- Hash + explorer after success -->
+        <div id="txStateHash" class="hidden" style="margin-top:8px;font-size:0.82rem;"></div>
+        <a id="txStateLink" href="#" target="_blank" class="explorer-link hidden" style="display:inline-block;margin-top:4px;font-size:0.82rem;">View on StellarExpert ↗</a>
+        <!-- Error recovery hint -->
+        <div id="txStateError" class="tx-error-hint hidden"></div>
       </div>
 
       <!-- TAB 1: OVERVIEW -->
@@ -692,7 +727,7 @@
                     <div class="action-confirm-title">Approve Deliverables & Release Payment</div>
                     <div id="approveConfirmText" class="action-confirm-desc">Approving will instantly transfer the escrowed payment to the developer.</div>
                     <button id="approveReleaseBtn" class="btn btn-primary" style="width: 100%;">
-                      âœ… Approve Work & Release Payment
+                      ✅ Approve Work & Release Payment
                     </button>
                   </div>
                 </div>
@@ -702,31 +737,31 @@
         </div>
       </div>
 
-      <!-- TAB 3: ACTIVITY LOGS -->
+      <!-- TAB 3: ACTIVITY LOGS — Event Timeline Feed -->
       <div id="tabActivity" class="hidden">
         <div class="page-header">
-          <h1 class="page-title">On-Chain Activity Logs</h1>
-          <p class="page-subtitle">Real-time Soroban contract events recorded during your session.</p>
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <h1 class="page-title" style="margin:0;">On-Chain Activity</h1>
+            <div id="syncIndicator" class="sync-indicator" title="Polling Stellar Testnet every 6 seconds">
+              <span class="sync-dot"></span> Live Sync
+            </div>
+          </div>
+          <p class="page-subtitle">Contract events synchronized from Stellar Testnet. Each event is deduplicated by transaction hash.</p>
         </div>
 
         <div class="card">
-          <div class="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Event / Action</th>
-                  <th>ID</th>
-                  <th>Tx Hash</th>
-                  <th>Stellar Explorer</th>
-                </tr>
-              </thead>
-              <tbody id="txLogBody">
-                <tr>
-                  <td colspan="4" class="text-center text-muted" style="padding: 24px 0;">No transactions recorded yet.</td>
-                </tr>
-              </tbody>
-            </table>
+          <div id="eventFeed" class="event-feed">
+            <div class="event-placeholder text-center text-muted" style="padding:48px 0;">
+              <div style="font-size:2.5rem;margin-bottom:12px;">⛓</div>
+              <div style="font-size:0.95rem;">No events yet. Connect wallets and perform contract actions to see live blockchain events here.</div>
+            </div>
           </div>
+        </div>
+
+        <!-- Legacy table kept hidden for backward compat -->
+        <div style="display:none;">
+          <table><thead><tr><th>Event</th><th>ID</th><th>Tx Hash</th><th>Explorer</th></tr></thead>
+          <tbody id="txLogBody"></tbody></table>
         </div>
       </div>
     </main>

@@ -2196,3 +2196,267 @@ tr:last-child td {
   display: block;
 }
 
+/* ==========================================================================
+   YELLOW BELT ADDITIONS
+   Multi-wallet slots, TX state machine, Event timeline, Error hints
+   ========================================================================== */
+
+/* ---- Network Badge ---- */
+.network-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: rgba(52, 211, 153, 0.08);
+  border: 1px solid rgba(52, 211, 153, 0.2);
+  border-radius: 20px;
+  padding: 4px 10px;
+  letter-spacing: 0.02em;
+}
+
+/* ---- Dual Wallet Slots ---- */
+.wallet-slot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  min-width: 0;
+  position: relative;
+}
+
+.wallet-slot::before {
+  content: attr(id);
+  display: none;
+}
+
+.wallet-slot-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.wallet-slot-address {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#clientSlot .wallet-slot-label { color: #3b82f6; }
+#developerSlot .wallet-slot-label { color: #9d63e0; }
+
+#clientSlot { border-color: rgba(59, 130, 246, 0.2); }
+#developerSlot { border-color: rgba(157, 99, 224, 0.2); }
+
+#clientSlot .wallet-slot-address,
+#developerSlot .wallet-slot-address {
+  color: var(--text-main);
+}
+
+.wallet-slot-balance {
+  font-size: 0.7rem;
+  color: var(--success);
+  white-space: nowrap;
+}
+
+/* ---- Transaction State Machine Banner ---- */
+.status-banner-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tx-steps {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.tx-step {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.tx-step.tx-step-active {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.tx-step.tx-step-done {
+  color: var(--success);
+  border-color: rgba(52, 211, 153, 0.3);
+  background: rgba(52, 211, 153, 0.08);
+}
+
+.tx-step-arrow {
+  font-size: 0.9rem;
+  color: var(--border-strong);
+}
+
+.tx-error-hint {
+  margin-top: 8px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+}
+
+/* ---- Event Feed Timeline ---- */
+.event-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 4px 0;
+  min-height: 200px;
+}
+
+.event-entry {
+  display: flex;
+  gap: 14px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background 0.15s;
+  animation: eventSlideIn 0.3s ease;
+}
+
+@keyframes eventSlideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.event-entry:hover { background: var(--bg-surface-hover); }
+.event-entry:last-child { border-bottom: none; }
+
+.event-entry-icon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+  width: 32px;
+  text-align: center;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+.event-entry-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.event-entry-type {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+
+.event-entry-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.event-source-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.1);
+  border: 1px solid rgba(52, 211, 153, 0.2);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+.event-source-direct {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.1);
+  border-color: rgba(96, 165, 250, 0.2);
+}
+
+.event-entry-time {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.event-entry-hash {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.event-placeholder {
+  padding: 48px 20px;
+}
+
+/* ---- Sync Indicator ---- */
+.sync-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  padding: 3px 10px;
+}
+
+.sync-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  display: inline-block;
+}
+
+.sync-active .sync-dot {
+  background: #34d399;
+  box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6);
+  animation: syncPulse 2s infinite;
+}
+
+.sync-active {
+  color: #34d399;
+  border-color: rgba(52, 211, 153, 0.25);
+}
+
+@keyframes syncPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6); }
+  70%  { box-shadow: 0 0 0 5px rgba(52, 211, 153, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+}
+
+/* ---- Role Notice warning for wrong-wallet ---- */
+#roleNotice {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  padding: 8px 0;
+}
