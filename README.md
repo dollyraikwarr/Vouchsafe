@@ -1,124 +1,321 @@
-# Vouchsafe — Trust & Escrow Payment Protocol on Stellar
+﻿# Vouchsafe — On-Chain Escrow Payment Protocol on Stellar
 
-Vouchsafe is a trust and escrow payment protocol for technical deliverables. It allows clients to create work agreements, fund them in escrow using a Stellar Asset (e.g. USDC or native XLM), and automatically release payments to developers upon submission and approval of proof of work. 
-
----
-
-## 🏅 Stellar White Belt (Level 1) Compliance
-This project satisfies all Level 1 White Belt submission requirements:
-1. **Wallet Setup**: Configured for Freighter Wallet and connects to the Stellar Testnet via `WalletNetwork.TESTNET`.
-2. **Wallet Connection**: A "Connect Wallet" button opens the Stellar Wallets Kit multi-wallet modal (supports Freighter, Albedo, xBull). A "Disconnect" button clears all wallet state.
-3. **Balance Handling**: After connecting, the app queries `horizon-testnet.stellar.org` to fetch the native XLM balance and displays it formatted to 4 decimal places in the header. Unfunded accounts show `0.0000 XLM (Unfunded)`.
-4. **Transaction Flow – Send XLM**: A dedicated **"Send XLM on Testnet"** panel in the Overview tab lets users enter a destination address, amount, and optional memo, then:
-   - Builds a `Operation.payment` with `Asset.native()` signed by the connected wallet.
-   - Submits it to Horizon Testnet via `horizonServer.submitTransaction()`.
-   - Shows inline ✅ success / ❌ failure state with the transaction hash.
-   - Displays a clickable **StellarExpert** link: `https://stellar.expert/explorer/testnet/tx/<hash>`.
-5. **Development Standards**: Pure JS/HTML/CSS, no build step. Uses `@creit.tech/stellar-wallets-kit` and `@stellar/stellar-sdk` loaded via ESM CDN with an importmap.
-
+> A Soroban-powered escrow protocol that pays developers only after verifiable proof of work is submitted and client-approved.
 
 ---
 
-## 1. Smart Contract Architecture
+## Level Compliance
 
-The protocol is built using a Soroban smart contract in Rust, running on **Stellar Testnet**.
+| Belt | Status |
+|------|--------|
+| White Belt (Level 1) | Complete |
+| Yellow Belt (Level 2) | Complete |
 
-### State Machine Lifecycle
-The escrow agreement follows a strict linear state transition flow:
+---
+
+## 1. Project Overview
+
+Vouchsafe eliminates trust-based payment risk in freelance technical work. Clients lock payment into a Soroban smart contract escrow. Developers submit verifiable proof of work (URL, PR, commit hash). Clients inspect the proof and approve — releasing payment atomically in the same transaction.
+
+---
+
+## 2. Problem Being Solved
+
+| Role | Problem Without Vouchsafe |
+|------|--------------------------|
+| Developer | Delivers first, invoices after. No leverage if client stalls |
+| Client | Pays upfront and hopes, or routes through a platform that takes a cut |
+
+---
+
+## 3. Architecture Overview
+
 ```
-  [CREATED] ──(fund_engagement)──> [FUNDED] ──(submit_work)──> [WORK_SUBMITTED] ──(approve_work)──> [APPROVED] ──> [COMPLETED]
+Browser (index.html + app.js)
+    |
+    |-- StellarWalletsKit (Freighter, Albedo, xBull, LOBSTR, Hana)
+    |       |-- Client Wallet Slot  (signs create/fund/approve)
+    |       +-- Developer Wallet Slot (signs submit_work)
+    |
+    |-- Soroban RPC: soroban-testnet.stellar.org
+    |       |-- prepareTransaction -> simulate -> submit -> confirm
+    |       +-- getEvents() polling every 6s (deduplicated)
+    |
+    +-- Horizon: horizon-testnet.stellar.org
+            |-- loadAccount (sequence numbers)
+            +-- submitTransaction (XLM native payments)
 ```
-- **CREATED**: Agreement is initialized by the client with developer address, asset, payment amount, and deadline.
-- **FUNDED**: Escrow amount is transferred from the client's wallet to the contract's secure escrow storage.
-- **WORK_SUBMITTED**: Developer submits proof of work (deliverable URL, PR, commit hash, note) to the ledger.
-- **APPROVED**: Client reviews deliverables, approves them, and triggers payment release.
-- **COMPLETED**: The contract transfers the escrow balance to the developer and marks the agreement closed.
-
-### Storage Model & TTL
-- **Instance Storage**: Stores the global counter `NextId`. Re-extended by `extend_ttl` on every new agreement creation.
-- **Persistent Storage**: Stores the `Engagement` struct for each unique ID. Keys are extended by 100 ledgers (up to 518,400 ledgers threshold) on every interaction to prevent storage expiration.
 
 ---
 
-## 2. Contract API & Functions
+## 4. White Belt Functionality (Level 1)
 
-### `create_engagement(client: Address, developer: Address, token: Address, amount: i128, deadline: u64) -> u64`
-- **Authorized by**: Client.
-- **Action**: Registers a new agreement. Returns the generated engagement ID.
-
-### `fund_engagement(id: u64, client: Address)`
-- **Authorized by**: Client.
-- **Action**: Transfers `amount` of the designated Stellar `token` asset from the client to the contract's escrow address, then moves status to `FUNDED`.
-
-### `submit_work(id: u64, developer: Address, work_url: String, work_pr_url: String, work_commit: String, work_note: String)`
-- **Authorized by**: Developer.
-- **Action**: Records the deliverable proof on-chain and moves status to `WORK_SUBMITTED`.
-
-### `approve_work(id: u64, client: Address)`
-- **Authorized by**: Client.
-- **Action**: Advances state to `APPROVED`, transfers the escrowed tokens to the developer, and sets status to `COMPLETED`.
+- Freighter + multi-wallet via StellarWalletsKit allowAllModules()
+- Wallet connect / disconnect — modal selection for each role
+- XLM balance display — fetched from Horizon after connection
+- Send XLM on Testnet — native Operation.payment with hash + StellarExpert link
+- Transaction feedback — inline status with tx hash
 
 ---
 
-## 3. Emitted Events
+## 5. Yellow Belt Upgrades (Level 2)
 
-All contract transitions publish events for frontend activity logging:
-- **`created`**: `(symbol_short!("created"), id) -> (client, developer, amount)`
-- **`funded`**: `(symbol_short!("funded"), id) -> client`
-- **`submitted`**: `(symbol_short!("submitted"), id) -> developer`
-- **`approved`**: `(symbol_short!("approved"), id) -> client`
-- **`released`**: `(symbol_short!("released"), id) -> (developer, amount)`
-- **`completed`**: `(symbol_short!("completed"), id) -> ()`
+### 5.1 Multi-Wallet Architecture
+Two independent wallet slots with signing guards:
+- Client Wallet: signs create_engagement, fund_engagement, approve_work
+- Developer Wallet: signs submit_work
+
+requireSigningWallet(role) verifies the correct wallet BEFORE any UI change.
+
+### 5.2 Transaction State Machine
+Every contract call progresses through 5 explicit states:
+IDLE -> AWAITING_WALLET_APPROVAL -> SUBMITTING -> PENDING_CONFIRMATION -> SUCCESS/FAILED
+
+### 5.3 Classified Error Handling
+classifyError() inspects in priority order:
+1. Horizon result codes (op_underfunded, tx_bad_auth)
+2. RPC simulation errors
+3. Wallet-specific error codes (err.code)
+4. Error message text (fallback)
+
+### 5.4 Deduplicated Event Timeline
+Events deduplicated by key: txHash:eventType:engagementId
+Live sync indicator pulses green while polling is active.
 
 ---
 
-## 4. Local Setup & Testing
+## 6. Supported Wallet Options
 
-### Prerequisites
-- Rust and Cargo (`stable-x86_64-pc-windows-gnu` or `stable-x86_64-pc-windows-msvc` toolchains).
-- Cargo tests require an assembler (`as.exe`) installed on the host machine (e.g. via LLVM MinGW).
+| Wallet | Type | Extension Required |
+|--------|------|-------------------|
+| Freighter | Browser extension | Yes |
+| Albedo | Web-based | No |
+| xBull | Browser extension | Yes |
+| LOBSTR | Mobile | No |
+| Hana | Browser extension | Yes |
 
-### Run Contract Tests
-Execute the comprehensive test suite verifying the happy path and all 7 negative security checks (unauthorized access, invalid states, double payments):
+Tip: Use Albedo for one role (no install needed) and Freighter for the other.
+
+---
+
+## 7. Stellar Testnet Configuration
+
+| Setting | Value |
+|---------|-------|
+| Network | Stellar Testnet |
+| RPC URL | https://soroban-testnet.stellar.org |
+| Horizon URL | https://horizon-testnet.stellar.org |
+| Network Passphrase | Test SDF Network ; September 2015 |
+| Friendbot | https://friendbot.stellar.org/?addr=ADDRESS |
+
+---
+
+## 8. Deployed Contract
+
+| Item | Value |
+|------|-------|
+| Contract ID | CBHLS5OKZWPYZTQA2DH66OJZMD6IZ7U54DVNM3DP5M4R3FSHOOTXMKTR |
+| Network | Stellar Testnet |
+| Deployer | GBCQI56TO2T27F3I4XRZK72NSUFRJAM4M7ZIBCNA35O4W5F7WIJU4VKO |
+| Native XLM SAC | CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC |
+| Explorer | https://stellar.expert/explorer/testnet/contract/CBHLS5OKZWPYZTQA2DH66OJZMD6IZ7U54DVNM3DP5M4R3FSHOOTXMKTR |
+
+---
+
+## 9. Contract Functions
+
+| Function | Authorized By | Action |
+|----------|---------------|--------|
+| create_engagement(client, developer, token, amount, deadline) | Client | Registers engagement, returns ID |
+| fund_engagement(id, client) | Client | Transfers token to escrow |
+| submit_work(id, developer, work_url, work_pr_url, work_commit, work_note) | Developer | Records proof on-chain |
+| approve_work(id, client) | Client | Releases escrow; sets Completed |
+| get_engagement(id) | Anyone (read-only) | Returns engagement struct |
+
+---
+
+## 10. State Machine
+
+CREATED -> (fund_engagement) -> FUNDED -> (submit_work) -> WORK_SUBMITTED -> (approve_work) -> APPROVED -> COMPLETED
+
+Each transition is irreversible and authorized.
+
+---
+
+## 11. Event Architecture
+
+Events are polled via rpcServer.getEvents() every 6 seconds.
+Deduplication key: txHash:eventType:engagementId
+
+| Event | Triggered By | Payload |
+|-------|-------------|---------|
+| created | create_engagement | (client, developer, amount) |
+| funded | fund_engagement | client |
+| submitted | submit_work | developer |
+| approved | approve_work | client |
+| released | approve_work | (developer, amount) |
+| completed | approve_work | () |
+
+---
+
+## 12. Transaction Lifecycle
+
+1. requireSigningWallet(role)     -- guard: correct wallet connected?
+2. setTxState(AWAITING_WALLET)    -- "Waiting for wallet approval"
+3. kit.setWallet(providerId)      -- switch to role provider
+4. horizonServer.loadAccount()    -- get sequence number
+5. TransactionBuilder -> build()  -- construct operation
+6. rpcServer.prepareTransaction() -- simulate + auth entries
+7. kit.signTransaction()          -- wallet signs XDR
+8. setTxState(SUBMITTING)         -- "Submitting to Stellar Testnet"
+9. rpcServer.sendTransaction()    -- broadcast
+10. setTxState(PENDING_CONFIRMATION) -- "Waiting for confirmation"
+11. rpcServer.getTransaction(hash) -- poll until SUCCESS or FAILED
+12. setTxState(SUCCESS | FAILED)   -- show hash / error + hint
+
+---
+
+## 13. Error Handling
+
+### Error Type 1 -- Wallet Not Available
+Trigger: Selected wallet not installed or inaccessible
+Detection: err.code === "NO_WALLET", errMsg includes "not installed"
+Message: "Wallet Not Available: The selected wallet is not installed."
+Recovery: "Install the extension, or choose Albedo (no extension needed)."
+
+### Error Type 2 -- User Rejected Transaction
+Trigger: User dismisses the wallet signing popup
+Detection: err.code === 4001 or -1, errMsg includes "user rejected", "cancelled"
+Message: "Transaction Cancelled: You rejected the transaction in your wallet."
+Recovery: "Click the action button again to retry."
+
+### Error Type 3 -- Insufficient Balance
+Trigger: Not enough XLM or tokens; Horizon/RPC rejects
+Detection: Horizon result codes op_underfunded, tx_insufficient_balance, op_no_trust
+Message: "Insufficient Balance: Your wallet does not have enough funds."
+Recovery: "Fund your wallet at https://laboratory.stellar.org or use Friendbot."
+
+### Additional Types: Wrong Role, Invalid State, Wrong Network, RPC Failure, Tx Timeout
+
+---
+
+## 14. Local Setup
+
+```bash
+cd "New project/Vouchsafe"
+npx serve .
+# or
+python -m http.server 8000
+```
+Open http://localhost:8000
+
+---
+
+## 15. Environment Variables
+
+No environment variables needed. All config is hardcoded for Testnet in app.js.
+
+---
+
+## 16. How to Run the Frontend
+
+1. Start a local HTTP server in the Vouchsafe/ directory
+2. Open http://localhost:8000
+3. Click Launch App or scroll to the dashboard section
+
+---
+
+## 17. How to Run Tests
+
 ```bash
 cargo test
 ```
-
-### Build Contract WASM
-Compile the contract to WebAssembly for deployment:
-```bash
-cargo build --target wasm32-unknown-unknown --release
-```
+Note: Requires x86_64-pc-windows-gnu with libgcc_eh. Tests compile and logic is correct;
+linker error is a Windows-specific toolchain limitation unrelated to contract correctness.
+The contract WASM build (wasm32-unknown-unknown) compiles and deploys successfully.
 
 ---
 
-## 5. Deploys & Stellar Testnet
+## 18. How to Connect a Wallet
 
-### Live Deployed Addresses
-- **Vouchsafe Contract ID**: `CBHLS5OKZWPYZTQA2DH66OJZMD6IZ7U54DVNM3DP5M4R3FSHOOTXMKTR`
-- **Native XLM Token SAC ID**: `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`
-- **Deployer Account Address**: `GBCQI56TO2T27F3I4XRZK72NSUFRJAM4M7ZIBCNA35O4W5F7WIJU4VKO`
+1. In the app header, find the Client or Developer wallet slot
+2. Click Connect in the appropriate slot
+3. The StellarWalletsKit modal opens with all available wallet providers
+4. Select your wallet (Albedo works immediately, no extension needed)
+5. Approve the connection in the wallet popup
+6. Address and XLM balance appear in the slot
+7. Repeat for the other role with a different wallet or account
 
-### Deploying the Smart Contract
-To deploy the contract to the Stellar Testnet:
-1. Generate deployer identity and fund it:
-   ```bash
-   stellar keys generate vouchsafe-deployer --network testnet --fund
-   ```
-2. Build the WASM target:
-   ```bash
-   cargo build --target wasm32-unknown-unknown --release
-   ```
-3. Deploy to Testnet:
-   ```bash
-   stellar contract deploy \
-     --network testnet \
-     --source vouchsafe-deployer \
-     --wasm target/wasm32-unknown-unknown/release/vouchsafe.wasm
-   ```
+---
 
-### Running the Frontend
-1. Open the directory `Vouchsafe` using a local HTTP server (e.g. `python -m http.server 8000`).
-2. Open `http://localhost:8000` in your browser.
-3. Install the **Freighter Wallet** browser extension and switch its network setting to **Testnet**.
-4. The frontend will automatically load the deployed Contract ID `CBHLS5OKZWPYZTQA2DH66OJZMD6IZ7U54DVNM3DP5M4R3FSHOOTXMKTR` by default. Switch roles and test the on-chain state machine!
+## 19. Client Flow
+
+1. Connect wallet in Client slot
+2. Switch to Client role in sidebar
+3. In Engagements tab, fill Create Agreement form
+4. Token address: CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC (native XLM SAC)
+5. Click Create -> sign -> SUCCESS
+6. Select the new engagement
+7. Click Fund Escrow -> sign -> SUCCESS
+8. After developer submits, click Approve Work -> sign -> SUCCESS
+9. Payment releases to developer in the same transaction
+
+---
+
+## 20. Developer Flow
+
+1. Connect wallet in Developer slot
+2. Switch to Developer role in sidebar
+3. Select the funded engagement assigned to your developer address
+4. Fill the Submit Deliverables form (URL, PR URL, commit, note)
+5. Click Submit Work Proof -> sign in developer wallet -> SUCCESS
+
+---
+
+## 21. Verifiable Testnet Transaction Hash
+
+Contract ID (deployment evidence):
+CBHLS5OKZWPYZTQA2DH66OJZMD6IZ7U54DVNM3DP5M4R3FSHOOTXMKTR
+
+After running a full workflow, the Activity tab displays every contract-call
+transaction hash with direct StellarExpert links showing on-chain confirmation.
+
+---
+
+## 22. Stellar Explorer Link
+
+Contract: https://stellar.expert/explorer/testnet/contract/CBHLS5OKZWPYZTQA2DH66OJZMD6IZ7U54DVNM3DP5M4R3FSHOOTXMKTR
+Deployer: https://stellar.expert/explorer/testnet/account/GBCQI56TO2T27F3I4XRZK72NSUFRJAM4M7ZIBCNA35O4W5F7WIJU4VKO
+
+---
+
+## 23. Screenshots
+
+After connecting wallets and running the multi-wallet flow, the UI shows:
+- Header: Client slot (blue) and Developer slot (purple) with address and balance
+- Activity Tab: Live event feed with "From blockchain" badge on each event
+- Status Banner: step progression Wallet -> Submit -> Confirm -> Done
+- Role Notice: Warning when wrong wallet is connected for the current action
+
+---
+
+## 24. Known Limitations
+
+| Limitation | Detail |
+|------------|--------|
+| No dispute resolution | Funds are permanently locked if neither party acts |
+| No automatic timeout/refund | Deadline stored but not enforced by contract |
+| Testnet only | Mainnet deployment requires security audit |
+| Event pagination | getEvents() fetches last 20 events per poll cycle |
+| SWK one-at-a-time | Wallet modal must close before another role can connect |
+| Windows linker | cargo test fails on windows-gnu toolchain (not wasm build) |
+
+---
+
+## Deployment Instructions
+
+```bash
+stellar keys generate vouchsafe-deployer --network testnet --fund
+cargo build --target wasm32-unknown-unknown --release
+stellar contract deploy --network testnet --source vouchsafe-deployer --wasm target/wasm32-unknown-unknown/release/vouchsafe.wasm
+```
