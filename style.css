@@ -2460,3 +2460,80 @@ tr:last-child td {
   line-height: 1.5;
   padding: 8px 0;
 }
+
+/* ==========================================================================
+   ORANGE BELT ADDITIONS
+   Mobile Responsiveness, Touch Targets & Robust UI States
+   ========================================================================== */
+
+/* Mobile & Tablet Media Queries */
+@media (max-width: 992px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .app-sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .header-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-container {
+    padding: 0 12px;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .wallet-slot {
+    flex-shrink: 0;
+  }
+
+  .wallet-slot-address {
+    max-width: 80px;
+  }
+
+  .btn {
+    min-height: 44px; /* Mobile touch target optimization */
+  }
+
+  .tx-steps {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .tx-step-arrow {
+    display: none;
+  }
+
+  .metrics-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .engagements-workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .brand-name {
+    display: none;
+  }
+}
+
