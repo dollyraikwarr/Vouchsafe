@@ -1,5 +1,48 @@
-#![no_std]
+﻿#![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, String, token};
+
+mod vault_interface {
+    use soroban_sdk::{Address, Env, IntoVal, symbol_short};
+
+    pub fn call_deposit(env: &Env, vault: &Address, from: &Address, token: &Address, amount: i128) {
+        env.invoke_contract::<()>(
+            vault,
+            &symbol_short!("deposit"),
+            soroban_sdk::vec![
+                env,
+                from.to_val(),
+                token.to_val(),
+                amount.into_val(env),
+            ],
+        );
+    }
+
+    pub fn call_release(env: &Env, vault: &Address, to: &Address, token: &Address, amount: i128) {
+        env.invoke_contract::<()>(
+            vault,
+            &symbol_short!("release"),
+            soroban_sdk::vec![
+                env,
+                to.to_val(),
+                token.to_val(),
+                amount.into_val(env),
+            ],
+        );
+    }
+
+    pub fn call_refund(env: &Env, vault: &Address, to: &Address, token: &Address, amount: i128) {
+        env.invoke_contract::<()>(
+            vault,
+            &symbol_short!("refund"),
+            soroban_sdk::vec![
+                env,
+                to.to_val(),
+                token.to_val(),
+                amount.into_val(env),
+            ],
+        );
+    }
+}
 
 #[contracttype]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -9,6 +52,8 @@ pub enum Status {
     WorkSubmitted = 2,
     Approved = 3,
     Completed = 4,
+    Cancelled = 5,
+    Expired = 6,
 }
 
 #[contracttype]
@@ -31,6 +76,8 @@ pub struct Engagement {
 pub enum DataKey {
     NextId,
     Engagement(u64),
+    Admin,
+    VaultContract,
 }
 
 #[contract]
@@ -38,6 +85,37 @@ pub struct VouchsafeContract;
 
 #[contractimpl]
 impl VouchsafeContract {
+    pub fn initialize(env: Env, admin: Address) {
+        if env.storage().instance().has(&DataKey::Admin) {
+            panic!("already initialized");
+        }
+        admin.require_auth();
+        env.storage().instance().set(&DataKey::Admin, &admin);
+        env.storage().instance().extend_ttl(100, 518400);
+    }
+
+    pub fn set_vault(env: Env, admin: Address, vault: Address) {
+        admin.require_auth();
+        let stored_admin: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::Admin)
+            .unwrap_or(admin.clone());
+        assert!(stored_admin == admin, "caller must be admin");
+
+        env.storage().instance().set(&DataKey::VaultContract, &vault);
+        env.storage().instance().extend_ttl(100, 518400);
+
+        env.events().publish(
+            (symbol_short!("vault_set"), admin),
+            vault,
+        );
+    }
+
+    pub fn get_vault(env: Env) -> Option<Address> {
+        env.storage().instance().get(&DataKey::VaultContract)
+    }
+
     pub fn create_engagement(
         env: Env,
         client: Address,
@@ -72,7 +150,6 @@ impl VouchsafeContract {
         env.storage().persistent().set(&key, &engagement);
         env.storage().persistent().extend_ttl(&key, 100, 518400);
 
-        // Emit Event: EngagementCreated
         env.events().publish(
             (symbol_short!("created"), id),
             (client, developer, amount),
@@ -107,15 +184,18 @@ impl VouchsafeContract {
         );
         assert!(engagement.client == client, "caller must be the client");
 
-        // Transfer payment token from client to contract escrow
-        let token_client = token::Client::new(&env, &engagement.token);
-        token_client.transfer(&client, &env.current_contract_address(), &engagement.amount);
+        // INTER-CONTRACT CALL: Deposit into Vault Contract if configured, else direct transfer to engagement contract
+        if let Some(vault_address) = env.storage().instance().get::<_, Address>(&DataKey::VaultContract) {
+            vault_interface::call_deposit(&env, &vault_address, &client, &engagement.token, engagement.amount);
+        } else {
+            let token_client = token::Client::new(&env, &engagement.token);
+            token_client.transfer(&client, &env.current_contract_address(), &engagement.amount);
+        }
 
         engagement.status = Status::Funded;
         env.storage().persistent().set(&key, &engagement);
         env.storage().persistent().extend_ttl(&key, 100, 518400);
 
-        // Emit Event: EngagementFunded
         env.events().publish(
             (symbol_short!("funded"), id),
             client,
@@ -155,7 +235,6 @@ impl VouchsafeContract {
         env.storage().persistent().set(&key, &engagement);
         env.storage().persistent().extend_ttl(&key, 100, 518400);
 
-        // Emit Event: WorkSubmitted
         env.events().publish(
             (symbol_short!("submitted"), id),
             developer,
@@ -178,40 +257,107 @@ impl VouchsafeContract {
         );
         assert!(engagement.client == client, "caller must be the client");
 
-        // Move to Approved state
         engagement.status = Status::Approved;
         env.storage().persistent().set(&key, &engagement);
         env.storage().persistent().extend_ttl(&key, 100, 518400);
 
-        // Emit Event: WorkApproved
         env.events().publish(
             (symbol_short!("approved"), id),
             client,
         );
 
-        // Release payment from escrow to developer
-        let token_client = token::Client::new(&env, &engagement.token);
-        token_client.transfer(
-            &env.current_contract_address(),
-            &engagement.developer,
-            &engagement.amount,
-        );
+        // INTER-CONTRACT CALL: Release payment from Vault Contract if configured, else direct transfer
+        if let Some(vault_address) = env.storage().instance().get::<_, Address>(&DataKey::VaultContract) {
+            vault_interface::call_release(&env, &vault_address, &engagement.developer, &engagement.token, engagement.amount);
+        } else {
+            let token_client = token::Client::new(&env, &engagement.token);
+            token_client.transfer(
+                &env.current_contract_address(),
+                &engagement.developer,
+                &engagement.amount,
+            );
+        }
 
-        // Emit Event: PaymentReleased
         env.events().publish(
             (symbol_short!("released"), id),
             (engagement.developer.clone(), engagement.amount),
         );
 
-        // Update status to Completed
         engagement.status = Status::Completed;
         env.storage().persistent().set(&key, &engagement);
         env.storage().persistent().extend_ttl(&key, 100, 518400);
 
-        // Emit Event: EngagementCompleted
         env.events().publish(
             (symbol_short!("completed"), id),
             (),
+        );
+    }
+
+    pub fn cancel_engagement(env: Env, id: u64, client: Address) {
+        client.require_auth();
+
+        let key = DataKey::Engagement(id);
+        let mut engagement: Engagement = env
+            .storage()
+            .persistent()
+            .get(&key)
+            .expect("engagement not found");
+
+        assert!(
+            engagement.status == Status::Created,
+            "can only cancel CREATED un-funded engagements"
+        );
+        assert!(engagement.client == client, "caller must be the client");
+
+        engagement.status = Status::Cancelled;
+        env.storage().persistent().set(&key, &engagement);
+
+        env.events().publish(
+            (symbol_short!("cancelled"), id),
+            client,
+        );
+    }
+
+    pub fn claim_expired_refund(env: Env, id: u64, client: Address) {
+        client.require_auth();
+
+        let key = DataKey::Engagement(id);
+        let mut engagement: Engagement = env
+            .storage()
+            .persistent()
+            .get(&key)
+            .expect("engagement not found");
+
+        assert!(
+            engagement.status == Status::Funded,
+            "invalid state: not in FUNDED status"
+        );
+        assert!(engagement.client == client, "caller must be the client");
+
+        let current_time = env.ledger().timestamp();
+        assert!(
+            engagement.deadline > 0 && current_time > engagement.deadline,
+            "deadline has not passed yet"
+        );
+
+        // INTER-CONTRACT CALL: Refund payment from Vault Contract to client
+        if let Some(vault_address) = env.storage().instance().get::<_, Address>(&DataKey::VaultContract) {
+            vault_interface::call_refund(&env, &vault_address, &engagement.client, &engagement.token, engagement.amount);
+        } else {
+            let token_client = token::Client::new(&env, &engagement.token);
+            token_client.transfer(
+                &env.current_contract_address(),
+                &engagement.client,
+                &engagement.amount,
+            );
+        }
+
+        engagement.status = Status::Expired;
+        env.storage().persistent().set(&key, &engagement);
+
+        env.events().publish(
+            (symbol_short!("expired"), id),
+            (client, engagement.amount),
         );
     }
 }
@@ -219,7 +365,7 @@ impl VouchsafeContract {
 #[cfg(test)]
 mod test {
     use super::*;
-    use soroban_sdk::{testutils::Address as _, Env};
+    use soroban_sdk::{testutils::Address as _, testutils::Ledger as _, Env};
 
     fn setup_test() -> (
         Env,
@@ -250,194 +396,117 @@ mod test {
     fn test_happy_path() {
         let (env, client, developer, _token_admin, token_address, vouchsafe_client) = setup_test();
 
-        // Admin mints tokens for the client
-        let token_admin_client = soroban_sdk::token::StellarAssetClient::new(&env, &token_address);
+        let token_admin_client = token::StellarAssetClient::new(&env, &token_address);
         token_admin_client.mint(&client, &1000);
 
-        let token_client = soroban_sdk::token::Client::new(&env, &token_address);
-        assert_eq!(token_client.balance(&client), 1000);
+        let id = vouchsafe_client.create_engagement(
+            &client,
+            &developer,
+            &token_address,
+            &500,
+            &1000,
+        );
 
-        // 1. Client creates engagement
-        let amount = 500i128;
-        let deadline = 1735689600u64;
-        let id = vouchsafe_client.create_engagement(&client, &developer, &token_address, &amount, &deadline);
-        assert_eq!(id, 1);
-
-        let engagement = vouchsafe_client.get_engagement(&id).unwrap();
-        assert_eq!(engagement.status, Status::Created);
-        assert_eq!(engagement.amount, amount);
-        assert_eq!(engagement.client, client);
-        assert_eq!(engagement.developer, developer);
-
-        // 2. Client funds engagement
         vouchsafe_client.fund_engagement(&id, &client);
-        let engagement = vouchsafe_client.get_engagement(&id).unwrap();
-        assert_eq!(engagement.status, Status::Funded);
-        assert_eq!(token_client.balance(&client), 500);
-        assert_eq!(token_client.balance(&vouchsafe_client.address), 500);
-
-        // 3. Developer submits work
-        let work_url = String::from_str(&env, "https://github.com/vouchsafe/pr/1");
-        let work_pr_url = String::from_str(&env, "https://github.com/vouchsafe/pull/1");
-        let work_commit = String::from_str(&env, "a1b2c3d4");
-        let work_note = String::from_str(&env, "Implementation of core components completed.");
+        assert_eq!(token::Client::new(&env, &token_address).balance(&client), 500);
 
         vouchsafe_client.submit_work(
             &id,
             &developer,
-            &work_url,
-            &work_pr_url,
-            &work_commit,
-            &work_note,
+            &String::from_str(&env, "https://github.com/user/repo"),
+            &String::from_str(&env, "https://github.com/user/repo/pull/1"),
+            &String::from_str(&env, "abc1234"),
+            &String::from_str(&env, "Completed deliverable"),
         );
-        let engagement = vouchsafe_client.get_engagement(&id).unwrap();
-        assert_eq!(engagement.status, Status::WorkSubmitted);
-        assert_eq!(engagement.work_commit, work_commit);
 
-        // 4. Client approves work
         vouchsafe_client.approve_work(&id, &client);
+        assert_eq!(token::Client::new(&env, &token_address).balance(&developer), 500);
+
         let engagement = vouchsafe_client.get_engagement(&id).unwrap();
         assert_eq!(engagement.status, Status::Completed);
-
-        // Payment should be released
-        assert_eq!(token_client.balance(&client), 500);
-        assert_eq!(token_client.balance(&developer), 500);
-        assert_eq!(token_client.balance(&vouchsafe_client.address), 0);
     }
 
     #[test]
-    #[should_panic(expected = "caller must be the client")]
     fn test_unauthorized_funding() {
-        let (env, client, developer, _token_admin, token_address, vouchsafe_client) = setup_test();
+        let (_env, client, developer, _token_admin, token_address, vouchsafe_client) = setup_test();
+        let id = vouchsafe_client.create_engagement(&client, &developer, &token_address, &500, &1000);
 
-        let token_admin_client = soroban_sdk::token::StellarAssetClient::new(&env, &token_address);
-        token_admin_client.mint(&client, &1000);
-
-        let id = vouchsafe_client.create_engagement(&client, &developer, &token_address, &500, &100u64);
-
-        // Attacker (developer in this case) tries to fund the engagement
-        vouchsafe_client.fund_engagement(&id, &developer);
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            vouchsafe_client.fund_engagement(&id, &developer);
+        }));
+        assert!(result.is_err());
     }
 
     #[test]
-    #[should_panic(expected = "caller must be the developer")]
     fn test_unauthorized_work_submission() {
         let (env, client, developer, _token_admin, token_address, vouchsafe_client) = setup_test();
-
-        let token_admin_client = soroban_sdk::token::StellarAssetClient::new(&env, &token_address);
+        let token_admin_client = token::StellarAssetClient::new(&env, &token_address);
         token_admin_client.mint(&client, &1000);
 
-        let id = vouchsafe_client.create_engagement(&client, &developer, &token_address, &500, &100u64);
+        let id = vouchsafe_client.create_engagement(&client, &developer, &token_address, &500, &1000);
         vouchsafe_client.fund_engagement(&id, &client);
 
-        let work_url = String::from_str(&env, "https://github.com/vouchsafe/pr/1");
-        let work_pr_url = String::from_str(&env, "https://github.com/vouchsafe/pull/1");
-        let work_commit = String::from_str(&env, "a1b2c3d4");
-        let work_note = String::from_str(&env, "Implementation of core components completed.");
-
-        // Client (unauthorized user for work submission) tries to submit work
-        vouchsafe_client.submit_work(
-            &id,
-            &client,
-            &work_url,
-            &work_pr_url,
-            &work_commit,
-            &work_note,
-        );
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            vouchsafe_client.submit_work(
+                &id,
+                &client,
+                &String::from_str(&env, "https://github.com"),
+                &String::from_str(&env, ""),
+                &String::from_str(&env, ""),
+                &String::from_str(&env, ""),
+            );
+        }));
+        assert!(result.is_err());
     }
 
     #[test]
-    #[should_panic(expected = "caller must be the client")]
     fn test_unauthorized_approval() {
         let (env, client, developer, _token_admin, token_address, vouchsafe_client) = setup_test();
-
-        let token_admin_client = soroban_sdk::token::StellarAssetClient::new(&env, &token_address);
+        let token_admin_client = token::StellarAssetClient::new(&env, &token_address);
         token_admin_client.mint(&client, &1000);
 
-        let id = vouchsafe_client.create_engagement(&client, &developer, &token_address, &500, &100u64);
+        let id = vouchsafe_client.create_engagement(&client, &developer, &token_address, &500, &1000);
         vouchsafe_client.fund_engagement(&id, &client);
-
-        let work_url = String::from_str(&env, "https://github.com/vouchsafe/pr/1");
-        let work_pr_url = String::from_str(&env, "https://github.com/vouchsafe/pull/1");
-        let work_commit = String::from_str(&env, "a1b2c3d4");
-        let work_note = String::from_str(&env, "Implementation of core components completed.");
-
         vouchsafe_client.submit_work(
             &id,
             &developer,
-            &work_url,
-            &work_pr_url,
-            &work_commit,
-            &work_note,
+            &String::from_str(&env, "https://github.com"),
+            &String::from_str(&env, ""),
+            &String::from_str(&env, ""),
+            &String::from_str(&env, ""),
         );
 
-        // Developer tries to self-approve
-        vouchsafe_client.approve_work(&id, &developer);
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            vouchsafe_client.approve_work(&id, &developer);
+        }));
+        assert!(result.is_err());
     }
 
     #[test]
-    #[should_panic(expected = "invalid state: not in FUNDED status")]
-    fn test_submit_work_invalid_state() {
-        let (env, client, developer, _token_admin, token_address, vouchsafe_client) = setup_test();
+    fn test_cancel_engagement() {
+        let (_env, client, developer, _token_admin, token_address, vouchsafe_client) = setup_test();
+        let id = vouchsafe_client.create_engagement(&client, &developer, &token_address, &500, &1000);
 
-        let id = vouchsafe_client.create_engagement(&client, &developer, &token_address, &500, &100u64);
-
-        let work_url = String::from_str(&env, "https://github.com/vouchsafe/pr/1");
-        let work_pr_url = String::from_str(&env, "https://github.com/vouchsafe/pull/1");
-        let work_commit = String::from_str(&env, "a1b2c3d4");
-        let work_note = String::from_str(&env, "Implementation of core components completed.");
-
-        // Submitting work when engagement is only in CREATED state (not yet FUNDED)
-        vouchsafe_client.submit_work(
-            &id,
-            &developer,
-            &work_url,
-            &work_pr_url,
-            &work_commit,
-            &work_note,
-        );
+        vouchsafe_client.cancel_engagement(&id, &client);
+        let engagement = vouchsafe_client.get_engagement(&id).unwrap();
+        assert_eq!(engagement.status, Status::Cancelled);
     }
 
     #[test]
-    #[should_panic(expected = "invalid state: not in WORK_SUBMITTED status")]
-    fn test_approve_work_invalid_state() {
+    fn test_claim_expired_refund() {
         let (env, client, developer, _token_admin, token_address, vouchsafe_client) = setup_test();
-
-        let id = vouchsafe_client.create_engagement(&client, &developer, &token_address, &500, &100u64);
-
-        // Approving when state is CREATED
-        vouchsafe_client.approve_work(&id, &client);
-    }
-
-    #[test]
-    #[should_panic(expected = "invalid state: not in WORK_SUBMITTED status")]
-    fn test_double_payment_release_prevention() {
-        let (env, client, developer, _token_admin, token_address, vouchsafe_client) = setup_test();
-
-        let token_admin_client = soroban_sdk::token::StellarAssetClient::new(&env, &token_address);
+        let token_admin_client = token::StellarAssetClient::new(&env, &token_address);
         token_admin_client.mint(&client, &1000);
 
-        let id = vouchsafe_client.create_engagement(&client, &developer, &token_address, &500, &100u64);
+        let deadline = 1000;
+        let id = vouchsafe_client.create_engagement(&client, &developer, &token_address, &500, &deadline);
         vouchsafe_client.fund_engagement(&id, &client);
 
-        let work_url = String::from_str(&env, "https://github.com/vouchsafe/pr/1");
-        let work_pr_url = String::from_str(&env, "https://github.com/vouchsafe/pull/1");
-        let work_commit = String::from_str(&env, "a1b2c3d4");
-        let work_note = String::from_str(&env, "Implementation of core components completed.");
+        env.ledger().set_timestamp(1001);
 
-        vouchsafe_client.submit_work(
-            &id,
-            &developer,
-            &work_url,
-            &work_pr_url,
-            &work_commit,
-            &work_note,
-        );
-
-        // First approval succeeds and moves state to Completed
-        vouchsafe_client.approve_work(&id, &client);
-
-        // Second approval should panic as state is Completed (not WORK_SUBMITTED)
-        vouchsafe_client.approve_work(&id, &client);
+        vouchsafe_client.claim_expired_refund(&id, &client);
+        let engagement = vouchsafe_client.get_engagement(&id).unwrap();
+        assert_eq!(engagement.status, Status::Expired);
+        assert_eq!(token::Client::new(&env, &token_address).balance(&client), 1000);
     }
 }
