@@ -719,3 +719,117 @@ function startOnChainEventPolling() {
 $("connectWalletBtn").addEventListener("click", connectWallet);
 $("disconnectWalletBtn").addEventListener("click", disconnectWallet);
 
+// ============================================================
+// Send XLM — Level 1 White Belt: native XLM payment operation
+// ============================================================
+async function sendXlm(destination, amountXlm, memo) {
+  if (!connectedAddress) {
+    alert("Connect your wallet first.");
+    return;
+  }
+
+  const resultDiv = $("xlmTxResult");
+  const statusDiv = $("xlmTxStatus");
+  const hashRow   = $("xlmTxHashRow");
+  const linkEl    = $("xlmTxLink");
+
+  // Reset result panel
+  resultDiv.classList.remove("hidden");
+  statusDiv.style.color = "var(--text-secondary)";
+  statusDiv.textContent = "⏳ Preparing transaction…";
+  hashRow.classList.add("hidden");
+  linkEl.classList.add("hidden");
+
+  try {
+    // Build the native payment transaction
+    showStatus("Loading account…");
+    const sourceAccount = await horizonServer.loadAccount(connectedAddress);
+
+    const txBuilder = new StellarSdk.TransactionBuilder(sourceAccount, {
+      fee: StellarSdk.BASE_FEE,
+      networkPassphrase: NETWORK_PASSPHRASE,
+    })
+      .addOperation(
+        StellarSdk.Operation.payment({
+          destination,
+          asset: StellarSdk.Asset.native(),
+          amount: String(Number(amountXlm).toFixed(7)),
+        })
+      )
+      .setTimeout(30);
+
+    // Optional text memo (max 28 chars)
+    if (memo && memo.trim().length > 0) {
+      txBuilder.addMemo(StellarSdk.Memo.text(memo.trim()));
+    }
+
+    const tx = txBuilder.build();
+
+    statusDiv.textContent = "✍️ Waiting for wallet signature…";
+    showStatus("Waiting for wallet signature…");
+
+    const { signedTxXdr } = await kit.signTransaction(tx.toXDR(), {
+      address: connectedAddress,
+      networkPassphrase: NETWORK_PASSPHRASE,
+    });
+
+    const signedTx = StellarSdk.TransactionBuilder.fromXDR(signedTxXdr, NETWORK_PASSPHRASE);
+
+    statusDiv.textContent = "📡 Submitting to Stellar Testnet…";
+    showStatus("Submitting XLM payment…");
+
+    const response = await horizonServer.submitTransaction(signedTx);
+    const txHash = response.hash;
+
+    // ✅ Success state
+    statusDiv.style.color = "var(--success)";
+    statusDiv.textContent = `✅ XLM Sent — ${amountXlm} XLM to ${destination.slice(0,6)}…${destination.slice(-6)}`;
+
+    hashRow.classList.remove("hidden");
+    hashRow.textContent = `Tx Hash: ${txHash}`;
+
+    linkEl.href = `https://stellar.expert/explorer/testnet/tx/${txHash}`;
+    linkEl.classList.remove("hidden");
+    linkEl.style.display = "inline-block";
+
+    // Log to on-chain activity panel
+    logOnChainTx("XLM Payment", txHash);
+
+    showStatus(`XLM Payment successful!`, "success", `https://stellar.expert/explorer/testnet/tx/${txHash}`);
+    await refreshUserBalance();
+
+    // Reset form
+    $("sendXlmForm").reset();
+
+  } catch (err) {
+    const msg = err?.response?.data?.extras?.result_codes
+      ? JSON.stringify(err.response.data.extras.result_codes)
+      : (err.message || String(err));
+
+    statusDiv.style.color = "var(--danger)";
+    statusDiv.textContent = `❌ Failed: ${msg}`;
+    showStatus(`XLM payment failed: ${msg}`, "error");
+  }
+}
+
+// Wire Send XLM Form
+const sendXlmForm = $("sendXlmForm");
+if (sendXlmForm) {
+  sendXlmForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const dest   = $("xlmDestInput").value.trim();
+    const amount = $("xlmAmountInput").value;
+    const memo   = $("xlmMemoInput").value;
+
+    if (!dest.startsWith("G") || dest.length !== 56) {
+      alert("Please enter a valid Stellar address (starts with G, 56 chars).");
+      return;
+    }
+    if (!amount || Number(amount) <= 0) {
+      alert("Please enter a positive XLM amount.");
+      return;
+    }
+
+    await sendXlm(dest, amount, memo);
+  });
+}
