@@ -1,0 +1,53 @@
+﻿name: Vouchsafe CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  contract-ci:
+    name: Smart Contract Verification (Rust & Soroban)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+          components: clippy, rustfmt
+
+      - name: Check Rust Formatting
+        run: cargo fmt --check
+
+      - name: Compile Workspace Contracts
+        run: cargo check --workspace
+
+      - name: Run Smart Contract Unit Tests
+        run: cargo test --workspace -- --nocapture
+
+      - name: Build WASM Artifacts
+        run: cargo build --target wasm32-unknown-unknown --release
+
+  frontend-ci:
+    name: Frontend Verification & Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Frontend Tests
+        run: npm test
+
+      - name: Validate Application Shell HTML & JS Modules
+        run: node -e "const fs = require('fs'); if (!fs.existsSync('index.html') || !fs.existsSync('app.js')) process.exit(1); console.log('App shell verified.');"
