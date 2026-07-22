@@ -37,6 +37,14 @@
         <span class="version-badge">Testnet v0.1</span>
       </a>
 
+      <nav class="nav-group" style="flex-direction: row; display: flex; gap: 16px;" aria-label="Marketing Navigation">
+        <a href="#hero" class="btn btn-outline btn-sm">Overview</a>
+        <a href="#how-it-works" class="btn btn-outline btn-sm">How it works</a>
+        <a href="#protocol" class="btn btn-outline btn-sm">Protocol</a>
+        <a href="#roadmap" class="btn btn-outline btn-sm">Roadmap</a>
+        <a href="#faq" class="btn btn-outline btn-sm">FAQ</a>
+      </nav>
+
       <div class="header-actions">
         <span id="networkBadge" class="wallet-badge hidden">
           <span class="network-dot"></span> Stellar Testnet
@@ -49,7 +57,347 @@
     </div>
   </header>
 
-  <!-- Application Shell -->
+  <!-- ========================================================================== -->
+  <!-- MARKETING SITE (Evolved to Reference Design)                              -->
+  <!-- ========================================================================== -->
+
+  <!-- Hero Section -->
+  <header class="mkt-hero" id="hero">
+    <div class="header-container mkt-hero-inner">
+      <div class="mkt-hero-copy">
+        <p class="mkt-eyebrow">
+          <span class="mkt-eyebrow-dot"></span>
+          Live on Stellar Testnet · Soroban smart contract
+        </p>
+        <h1 class="mkt-h1">
+          Escrow that only pays out when the work is <span class="mkt-accent-blue font-weight-bold">ACTUALLY</span> done.
+        </h1>
+        <p class="mkt-hero-sub">
+          Fund a job on Stellar. The developer submits proof — a URL, a PR, a commit. You approve it, and payment releases automatically, in the same transaction. No invoices. No chasing. No trusting a stranger with your money first.
+        </p>
+        <div class="mkt-hero-ctas">
+          <a href="#app" class="btn btn-primary btn-lg">Launch App</a>
+          <a href="https://stellar.expert/explorer/testnet/contract/CBHLS5OKZWPYZTQA2DH66OJZMD6IZ7U54DVNM3DP5M4R3FSHOOTXMKTR" target="_blank" rel="noopener" class="btn btn-secondary btn-lg">View Contract ↗</a>
+        </div>
+        <p class="mkt-credibility-row monospace">
+          Live on Stellar Testnet · Contract CBHLS5...OOTXMKTR · 7/7 Passing Tests
+        </p>
+      </div>
+
+      <!-- Hero Visual Simulator Widget with Decorative Node Layer -->
+      <div class="mkt-hero-widget-wrap">
+        <!-- Abstract SVG Node Background Layer -->
+        <svg class="mkt-node-bg-texture" viewBox="0 0 500 400" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M50 350 C150 150, 350 250, 450 50" stroke="url(#nodeGradient)" stroke-width="3" stroke-dasharray="6 6" />
+          <circle cx="50" cy="350" r="8" fill="#3b82f6" opacity="0.8" />
+          <circle cx="220" cy="210" r="10" fill="#6366f1" opacity="0.8" />
+          <circle cx="450" cy="50" r="12" fill="#9d63e0" opacity="0.9" />
+          <defs>
+            <linearGradient id="nodeGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#3b82f6" />
+              <stop offset="50%" stop-color="#6366f1" />
+              <stop offset="100%" stop-color="#9d63e0" />
+            </linearGradient>
+          </defs>
+        </svg>
+
+        <!-- Live Event-Log Simulator Panel -->
+        <div class="mkt-terminal card">
+          <div class="mkt-terminal-head">
+            <div class="mkt-terminal-dots"><span></span><span></span><span></span></div>
+            <span class="mkt-terminal-title monospace">engagement.state</span>
+            <span class="mkt-terminal-flag">Illustrative simulation</span>
+          </div>
+
+          <div class="mkt-term-steps" id="mktTermSteps">
+            <div class="mkt-term-step" data-step="created"><span class="mkt-term-node"></span><span>Created</span></div>
+            <div class="mkt-term-step" data-step="funded"><span class="mkt-term-node"></span><span>Funded</span></div>
+            <div class="mkt-term-step" data-step="submitted"><span class="mkt-term-node"></span><span>Submitted</span></div>
+            <div class="mkt-term-step" data-step="approved"><span class="mkt-term-node"></span><span>Approved</span></div>
+            <div class="mkt-term-step" data-step="released"><span class="mkt-term-node"></span><span>Released</span></div>
+            <div class="mkt-term-step" data-step="completed"><span class="mkt-term-node"></span><span>Completed</span></div>
+          </div>
+
+          <div class="mkt-term-log monospace" id="mktTermLog" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Problem Section -->
+  <section class="mkt-section" id="problem">
+    <div class="header-container mkt-reveal">
+      <p class="mkt-eyebrow"><span class="mkt-eyebrow-dot"></span> The problem</p>
+      <h2 class="page-title" style="font-size: 2rem; margin-bottom: 20px;">Getting paid for real work still runs on trust</h2>
+      <div class="mkt-problem-grid">
+        <div class="mkt-problem-card">
+          <h3>If you're the developer</h3>
+          <p class="text-muted">You deliver first and invoice after. If the client stalls or disappears, you have no leverage and no record that says otherwise.</p>
+        </div>
+        <div class="mkt-problem-card">
+          <h3>If you're the client</h3>
+          <p class="text-muted">You pay upfront and hope, or you route everything through a platform that takes a cut and decides on its own terms when money moves.</p>
+        </div>
+      </div>
+      <p class="text-secondary" style="font-size: 0.95rem; margin-top: 16px;">Vouchsafe replaces both with a state machine: an on-chain escrow that only two actions can move — the developer submitting proof, and the client approving it.</p>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section class="mkt-section" id="how-it-works">
+    <div class="header-container mkt-reveal">
+      <p class="mkt-eyebrow"><span class="mkt-eyebrow-dot"></span> How it works</p>
+      <h2 class="page-title" style="font-size: 2rem; margin-bottom: 20px;">Four steps. One state machine. No exceptions.</h2>
+
+      <div class="mkt-steps">
+        <div class="mkt-step">
+          <span class="mkt-step-num">01</span>
+          <h3 style="font-size: 1.1rem; margin-bottom: 6px;">Create</h3>
+          <p class="text-muted">The client defines the engagement — developer address, payment amount, token, and deadline.</p>
+        </div>
+        <div class="mkt-step">
+          <span class="mkt-step-num">02</span>
+          <h3 style="font-size: 1.1rem; margin-bottom: 6px;">Fund</h3>
+          <p class="text-muted">Payment locks into the contract's on-chain escrow. Nobody can spend it until the state machine moves.</p>
+        </div>
+        <div class="mkt-step">
+          <span class="mkt-step-num">03</span>
+          <h3 style="font-size: 1.1rem; margin-bottom: 6px;">Submit</h3>
+          <p class="text-muted">The developer records deliverable proof on-chain: a URL, a PR link, a commit hash, and a note.</p>
+        </div>
+        <div class="mkt-step">
+          <span class="mkt-step-num">04</span>
+          <h3 style="font-size: 1.1rem; margin-bottom: 6px;">Approve</h3>
+          <p class="text-muted">The client approves. Payment releases to the developer automatically, in the same transaction.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- On-Chain Record Section -->
+  <section class="mkt-section" id="protocol">
+    <div class="header-container mkt-reveal">
+      <div class="mkt-protocol-grid">
+        <div>
+          <p class="mkt-eyebrow"><span class="mkt-eyebrow-dot"></span> On-chain record</p>
+          <h2 class="page-title" style="font-size: 2rem; margin-bottom: 16px;">Every engagement is a permanent, queryable record</h2>
+          <p class="text-muted" style="margin-bottom: 16px;">
+            <code class="monospace">get_engagement()</code> returns exactly what happened — client, developer, amount, deliverable, and whether payment actually released.
+          </p>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <a href="https://stellar.expert/explorer/testnet/contract/CBHLS5OKZWPYZTQA2DH66OJZMD6IZ7U54DVNM3DP5M4R3FSHOOTXMKTR" target="_blank" rel="noopener" class="explorer-link">
+              View on Stellar Explorer ↗
+            </a>
+            <button id="copyContractBtn" class="mkt-copy-btn">📋 Copy ID</button>
+          </div>
+        </div>
+
+        <div class="card monospace" style="padding: 20px;">
+          <div class="mkt-record-head">
+            <span style="font-size: 0.85rem;">get_engagement(482)</span>
+            <span class="badge badge-completed">Completed</span>
+          </div>
+          <dl style="display: flex; flex-direction: column; gap: 8px; font-size: 0.82rem;">
+            <div style="display: flex; justify-content: space-between;"><dt class="text-muted">id</dt><dd>482</dd></div>
+            <div style="display: flex; justify-content: space-between;"><dt class="text-muted">client</dt><dd>GBLQ7...WT2NF</dd></div>
+            <div style="display: flex; justify-content: space-between;"><dt class="text-muted">developer</dt><dd>GDXK2...RM4QP</dd></div>
+            <div style="display: flex; justify-content: space-between;"><dt class="text-muted">token</dt><dd>CDLZFC...RMQQVU</dd></div>
+            <div style="display: flex; justify-content: space-between;"><dt class="text-muted">amount</dt><dd style="color: var(--success); font-weight: bold;">500.0000000 XLM</dd></div>
+            <div style="display: flex; justify-content: space-between;"><dt class="text-muted">work_url</dt><dd class="explorer-link">github.com/…/vouchsafe-api</dd></div>
+            <div style="display: flex; justify-content: space-between;"><dt class="text-muted">work_commit</dt><dd>a1b2c3d4</dd></div>
+            <div style="display: flex; justify-content: space-between;"><dt class="text-muted">status</dt><dd><span class="badge badge-completed">Completed</span></dd></div>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Who It's For 2x2 Grid -->
+  <section class="mkt-section" id="who-its-for">
+    <div class="header-container mkt-reveal">
+      <p class="mkt-eyebrow"><span class="mkt-eyebrow-dot"></span> Who it's for</p>
+      <h2 class="page-title" style="font-size: 2rem; margin-bottom: 10px;">Two roles live today. Two more on the roadmap.</h2>
+
+      <div class="mkt-persona-grid-2x2">
+        <div class="mkt-persona-card client-card">
+          <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: #3b82f6; margin-bottom: 8px;">Clients</div>
+          <h3 style="font-size: 1.15rem; margin-bottom: 8px;">See the proof before you pay — not after.</h3>
+          <p class="text-muted">Funds sit in escrow, not in someone's inbox. You only approve — and release payment — once the deliverable is actually in front of you.</p>
+        </div>
+
+        <div class="mkt-persona-card developer-card">
+          <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: #9d63e0; margin-bottom: 8px;">Developers</div>
+          <h3 style="font-size: 1.15rem; margin-bottom: 8px;">Get paid the second your work is approved.</h3>
+          <p class="text-muted">No invoices, no follow-up emails, no "check's in the mail." Approval and payout happen in the same on-chain transaction.</p>
+        </div>
+
+        <div class="mkt-persona-card coming-soon-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Security Researchers</div>
+            <span class="badge badge-coming-soon">Coming soon</span>
+          </div>
+          <h3 style="font-size: 1.15rem; margin-bottom: 8px; color: var(--text-secondary);">On-chain bug bounties & audit reviews.</h3>
+          <p class="text-muted">Report vulnerabilities and verify smart contract security through transparent on-chain bounty rewards.</p>
+        </div>
+
+        <div class="mkt-persona-card coming-soon-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Arbitrators</div>
+            <span class="badge badge-coming-soon">Coming soon</span>
+          </div>
+          <h3 style="font-size: 1.15rem; margin-bottom: 8px; color: var(--text-secondary);">Decentralized multi-sig dispute resolution.</h3>
+          <p class="text-muted">Resolve milestone disputes and facilitate decentralized multi-sig escrow arbitration.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Roadmap Section -->
+  <section class="mkt-section" id="roadmap">
+    <div class="header-container mkt-reveal">
+      <p class="mkt-eyebrow"><span class="mkt-eyebrow-dot"></span> Roadmap</p>
+      <h2 class="page-title" style="font-size: 2rem; margin-bottom: 6px;">Building in public, honestly</h2>
+      <p class="text-muted">Built for Stellar's Journey to Mastery. Here's exactly what's shipped, and what's coming next.</p>
+
+      <!-- Compact Top Status Summary Row -->
+      <div class="mkt-roadmap-summary-row">
+        <div class="mkt-roadmap-summary-card">
+          <div class="mkt-status-indicator live">
+            <span>●</span> Live Today (4 Shipped Features)
+          </div>
+          <div class="mkt-progress-bars">
+            <div class="mkt-bar-fill live"></div>
+            <div class="mkt-bar-fill live"></div>
+            <div class="mkt-bar-fill live"></div>
+            <div class="mkt-bar-fill live"></div>
+          </div>
+        </div>
+
+        <div class="mkt-roadmap-summary-card">
+          <div class="mkt-status-indicator next">
+            <span>○</span> What's Next (4 Upcoming Milestones)
+          </div>
+          <div class="mkt-progress-bars">
+            <div class="mkt-bar-fill next"></div>
+            <div class="mkt-bar-fill next"></div>
+            <div class="mkt-bar-fill next"></div>
+            <div class="mkt-bar-fill next"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Connected Vertical Timeline -->
+      <div class="mkt-timeline-list">
+        <div class="mkt-timeline-item">
+          <div class="mkt-timeline-dot live"></div>
+          <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main);">Single-Milestone Escrow State Machine</h4>
+          <p class="text-muted" style="font-size: 0.85rem;">Linear lifecycle state machine enforced by Soroban smart contract.</p>
+        </div>
+
+        <div class="mkt-timeline-item">
+          <div class="mkt-timeline-dot live"></div>
+          <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main);">Live Deployed on Stellar Testnet</h4>
+          <p class="text-muted" style="font-size: 0.85rem;">Contract deployed and active at CBHLS5OKZWPYZTQA2DH66OJZMD6IZ7U54DVNM3DP5M4R3FSHOOTXMKTR.</p>
+        </div>
+
+        <div class="mkt-timeline-item">
+          <div class="mkt-timeline-dot live"></div>
+          <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main);">7/7 Passing Security & Execution Tests</h4>
+          <p class="text-muted" style="font-size: 0.85rem;">Unit test suite verifying state machine transitions, double-spend defense, and authorization rules.</p>
+        </div>
+
+        <div class="mkt-timeline-item">
+          <div class="mkt-timeline-dot next"></div>
+          <h4 style="font-size: 0.95rem; font-weight: 700; color: #9d63e0;">Multi-Milestone Engagements</h4>
+          <p class="text-muted" style="font-size: 0.85rem;">Support partial milestone funding and incremental releases for large deliverables.</p>
+        </div>
+
+        <div class="mkt-timeline-item">
+          <div class="mkt-timeline-dot next"></div>
+          <h4 style="font-size: 0.95rem; font-weight: 700; color: #9d63e0;">Dispute Resolution & Arbitration</h4>
+          <p class="text-muted" style="font-size: 0.85rem;">Decentralized 2-of-3 multi-sig arbitration for contested submissions.</p>
+        </div>
+
+        <div class="mkt-timeline-item">
+          <div class="mkt-timeline-dot next"></div>
+          <h4 style="font-size: 0.95rem; font-weight: 700; color: #9d63e0;">Portable Reputation & History</h4>
+          <p class="text-muted" style="font-size: 0.85rem;">On-chain developer reputation built from verified completed engagements.</p>
+        </div>
+
+        <div class="mkt-timeline-item">
+          <div class="mkt-timeline-dot next"></div>
+          <h4 style="font-size: 0.95rem; font-weight: 700; color: #9d63e0;">Stellar Mainnet Deployment</h4>
+          <p class="text-muted" style="font-size: 0.85rem;">Production mainnet deployment after security audit.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section class="mkt-section" id="faq">
+    <div class="header-container mkt-reveal">
+      <p class="mkt-eyebrow"><span class="mkt-eyebrow-dot"></span> FAQ</p>
+      <h2 class="page-title" style="font-size: 2rem; margin-bottom: 20px;">Straight answers.</h2>
+
+      <div class="mkt-faq-list">
+        <div class="mkt-faq-item">
+          <button class="mkt-faq-q" aria-expanded="false">
+            <span>What happens if the client never approves?</span>
+            <span style="font-size: 1.2rem;">+</span>
+          </button>
+          <div class="mkt-faq-a">
+            <p>The funds stay locked in escrow. There's no automatic timeout or refund yet — dispute resolution is on the roadmap, not shipped. Today, Vouchsafe enforces the happy path: submit proof, then get approved.</p>
+          </div>
+        </div>
+
+        <div class="mkt-faq-item">
+          <button class="mkt-faq-q" aria-expanded="false">
+            <span>What token can I use?</span>
+            <span style="font-size: 1.2rem;">+</span>
+          </button>
+          <div class="mkt-faq-a">
+            <p>Any Stellar Asset Contract token, including native XLM. You supply the token address when you create the engagement.</p>
+          </div>
+        </div>
+
+        <div class="mkt-faq-item">
+          <button class="mkt-faq-q" aria-expanded="false">
+            <span>Is this on Mainnet?</span>
+            <span style="font-size: 1.2rem;">+</span>
+          </button>
+          <div class="mkt-faq-a">
+            <p>No — Testnet only right now. The contract is live and verifiable, but Mainnet deployment is on the roadmap.</p>
+          </div>
+        </div>
+
+        <div class="mkt-faq-item">
+          <button class="mkt-faq-q" aria-expanded="false">
+            <span>What wallets are supported?</span>
+            <span style="font-size: 1.2rem;">+</span>
+          </button>
+          <div class="mkt-faq-a">
+            <p>Vouchsafe connects through Stellar Wallets Kit, which supports multiple wallets — Freighter, Albedo, and xBull.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Band with Real Dashboard Preview Image -->
+  <section class="mkt-final-cta">
+    <div class="header-container mkt-reveal" style="display: flex; flex-direction: column; align-items: center;">
+      <h2 class="page-title" style="font-size: 2.2rem; margin-bottom: 12px;">Fund it. Prove it. Get paid.</h2>
+      <p class="text-muted" style="margin-bottom: 24px;">The contract's live on Testnet. Connect a wallet and try the real state machine below.</p>
+      <a href="#app" class="btn btn-primary btn-lg">Launch App</a>
+
+      <!-- Real App Dashboard Preview Frame -->
+      <div class="mkt-app-preview-frame">
+        <img src="dashboard_preview.png" alt="Vouchsafe On-Chain Escrow App Dashboard Preview" class="mkt-app-preview-img" />
+      </div>
+    </div>
+  </section>
+
+  <!-- Application Shell (Untouched Dashboard) -->
   <div class="app-shell" id="app">
     <!-- Left Navigation Sidebar -->
     <aside class="app-sidebar">

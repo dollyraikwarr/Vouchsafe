@@ -166,4 +166,25 @@
     }, { threshold: 0.1 });
     heroObserver.observe(logEl.closest(".mkt-hero"));
   }
+
+  /* ---------------- Copy Contract ID ---------------- */
+  var copyBtn = document.getElementById("copyContractBtn");
+  if (copyBtn) {
+    copyBtn.addEventListener("click", function () {
+      var contractId = "CBHLS5OKZWPYZTQA2DH66OJZMD6IZ7U54DVNM3DP5M4R3FSHOOTXMKTR";
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(contractId).then(function () {
+          copyBtn.classList.add("is-copied");
+          copyBtn.textContent = "✓ Copied!";
+          setTimeout(function () {
+            copyBtn.classList.remove("is-copied");
+            copyBtn.textContent = "📋 Copy ID";
+          }, 2000);
+        }).catch(function (err) {
+          console.error("Copy failed:", err);
+        });
+      }
+    });
+  }
 })();
+

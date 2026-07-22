@@ -16,11 +16,13 @@
   --border-focus: #6366f1;
 
   /* Accent & Status Colors */
-  --primary: #4f46e5;
-  --primary-hover: #4338ca;
-  --primary-light: rgba(99, 102, 241, 0.12);
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --primary-light: rgba(59, 130, 246, 0.12);
 
   --accent-cyan: #06b6d4;
+  --accent-violet: #9d63e0;
+  --accent-violet-glow: rgba(157, 99, 224, 0.35);
   
   --text-main: #f8fafc;
   --text-secondary: #94a3b8;
@@ -2019,3 +2021,178 @@ tr:last-child td {
   color: var(--text-muted);
   margin-bottom: 30px;
 }
+
+/* ==========================================================================
+   Marketing Site Extensions (Reference Design Alignment)
+   ========================================================================== */
+
+.mkt-accent-blue {
+  color: #3b82f6 !important;
+  font-weight: 800;
+}
+
+/* Abstract Node Graphic Background Texture */
+.mkt-hero-widget-wrap {
+  position: relative;
+}
+
+.mkt-node-bg-texture {
+  position: absolute;
+  top: -30px;
+  left: -30px;
+  right: -30px;
+  bottom: -30px;
+  opacity: 0.2;
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 0.3s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mkt-node-bg-texture {
+    animation: none !important;
+    opacity: 0.15 !important;
+  }
+}
+
+/* Copy to Clipboard Button */
+.mkt-copy-btn {
+  margin-left: 10px;
+  cursor: pointer;
+  padding: 3px 8px;
+  font-size: 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-app);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  transition: var(--transition);
+}
+
+.mkt-copy-btn:hover {
+  border-color: var(--primary);
+  color: var(--text-main);
+}
+
+.mkt-copy-btn.is-copied {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+/* Who It's For 2x2 Grid Extensions */
+.mkt-persona-grid-2x2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 30px;
+}
+
+.mkt-persona-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  position: relative;
+}
+
+.mkt-persona-card.client-card {
+  border-top: 3px solid #3b82f6;
+}
+
+.mkt-persona-card.developer-card {
+  border-top: 3px solid #9d63e0;
+}
+
+.mkt-persona-card.coming-soon-card {
+  opacity: 0.6;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.badge-coming-soon {
+  background: var(--bg-app);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* Roadmap Status Summary Row */
+.mkt-roadmap-summary-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin: 24px 0 32px 0;
+}
+
+.mkt-roadmap-summary-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.mkt-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 12px;
+}
+
+.mkt-status-indicator.live { color: #10b981; }
+.mkt-status-indicator.next { color: #9d63e0; }
+
+.mkt-progress-bars {
+  display: flex;
+  gap: 6px;
+}
+
+.mkt-bar-fill {
+  height: 6px;
+  flex: 1;
+  border-radius: 3px;
+}
+
+.mkt-bar-fill.live {
+  background: #10b981;
+}
+
+.mkt-bar-fill.next {
+  border: 1px solid #9d63e0;
+  background: rgba(157, 99, 224, 0.2);
+}
+
+.mkt-timeline-dot.live {
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+}
+
+.mkt-timeline-dot.next {
+  background: #9d63e0;
+  box-shadow: 0 0 8px rgba(157, 99, 224, 0.4);
+}
+
+/* CTA Dashboard Preview Image */
+.mkt-app-preview-frame {
+  margin-top: 40px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.mkt-app-preview-img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
