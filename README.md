@@ -12,6 +12,7 @@
 |------------|-----------------|--------|--------------------|
 | ⚪ **White Belt** (Level 1) | Foundation & Core Escrow Contract | ✅ **COMPLETED** | [Read White Belt Specs ↗](docs/README_WHITE_BELT.md) |
 | 🟡 **Yellow Belt** (Level 2) | Multi-Wallet Architecture & Live Events | ✅ **COMPLETED** | [Read Yellow Belt Specs ↗](docs/README_YELLOW_BELT.md) |
+| 🟠 **Orange Belt** (Level 3) | Advanced Contracts, Inter-Contract Calls & CI/CD | ✅ **COMPLETED** | [Read Orange Belt Specs ↗](docs/README_ORANGE_BELT.md) |
 
 ---
 
@@ -34,19 +35,20 @@ Clients deposit funds into a Soroban smart contract escrow. Developers submit ve
 
 ## 3. Current Project Status
 
-- **Completed Belt Levels**: ⚪ White Belt (Level 1) & 🟡 Yellow Belt (Level 2).
+- **Completed Belt Levels**: ⚪ White Belt (Level 1), 🟡 Yellow Belt (Level 2), and 🟠 Orange Belt (Level 3).
 - **Contract Deployment**: Live on Stellar Testnet (`CBHLS5OKZWPYZTQA2DH66OJZMD6IZ7U54DVNM3DP5M4R3FSHOOTXMKTR`).
-- **Frontend Integration**: Dual-role multi-wallet dashboard with active signing guards, 5-state transaction lifecycle machine, code-first error classification, and deduplicated event polling.
-- **Verification**: 7 passing contract unit tests + 100% verified E2E Testnet transaction sequence.
+- **Inter-Contract Vault**: Inter-contract cross-invocation architecture separating state machine logic from escrow vault storage.
+- **CI/CD Automation**: GitHub Actions pipeline enforcing formatting, compilation, contract unit tests, WASM build, and frontend unit tests.
+- **Frontend Integration**: Dual-role multi-wallet dashboard with active signing guards, 5-state transaction lifecycle machine, code-first error classification, deduplicated event polling, and mobile responsiveness.
 
 ---
 
 ## 4. Technology Stack
 
-- **Smart Contract**: Rust, Soroban SDK (`soroban-sdk = "22.0.1"`), WASM target (`wasm32-unknown-unknown`).
-- **Frontend Core**: Vanilla JavaScript (ES Modules), HTML5, Custom CSS3 (Stripe/Linear technical dashboard aesthetic).
+- **Smart Contracts**: Rust, Soroban SDK (`soroban-sdk = "21.7.6"`), WASM target (`wasm32-unknown-unknown`).
+- **Frontend Core**: Vanilla JavaScript (ES Modules), Modular `src/` Architecture, Custom Responsive CSS3.
 - **Stellar Libraries**: `@stellar/stellar-sdk` (v14.0.0), `@creit.tech/stellar-wallets-kit` (v1.7.5).
-- **Blockchain Infrastructure**: Soroban RPC (`https://soroban-testnet.stellar.org`), Stellar Horizon (`https://horizon-testnet.stellar.org`).
+- **Testing & CI/CD**: Cargo Test Suite, Node.js Native Test Runner (`npm test`), GitHub Actions (`.github/workflows/ci.yml`).
 
 ---
 
@@ -54,18 +56,17 @@ Clients deposit funds into a Soroban smart contract escrow. Developers submit ve
 
 ```mermaid
 graph TD
-    subgraph Browser Client
+    subgraph Frontend Client
         UI[index.html / style.css]
-        App[app.js Core Logic]
+        App[app.js & src/ Modules]
         SWK[StellarWalletsKit]
         ClientSlot[Client Wallet Slot]
         DevSlot[Developer Wallet Slot]
     end
 
-    subgraph Stellar Testnet Infrastructure
-        Horizon[Stellar Horizon API]
-        RPC[Soroban RPC]
-        Contract[Soroban Escrow Contract]
+    subgraph Soroban Smart Contracts
+        EngagementContract[Vouchsafe Engagement Contract]
+        VaultContract[Vouchsafe Escrow Vault Contract]
         SAC[Stellar Asset Contract / XLM]
     end
 
@@ -74,10 +75,9 @@ graph TD
     SWK --> ClientSlot
     SWK --> DevSlot
     
-    App -->|loadAccount / submitTransaction| Horizon
-    App -->|simulate / sendTransaction / getEvents| RPC
-    RPC -->|Execute State Machine| Contract
-    Contract -->|Lock / Release Tokens| SAC
+    App -->|1. Create / Fund / Approve| EngagementContract
+    EngagementContract -->|2. C2C Deposit / Release / Refund| VaultContract
+    VaultContract -->|3. Transfer Tokens| SAC
 ```
 
 ---
@@ -101,41 +101,38 @@ graph TD
 - **Native XLM SAC Address**: `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`
 - **StellarExpert Explorer**: [View Contract Details ↗](https://stellar.expert/explorer/testnet/contract/CBHLS5OKZWPYZTQA2DH66OJZMD6IZ7U54DVNM3DP5M4R3FSHOOTXMKTR)
 
-### Verified Live On-Chain Transactions (Yellow Belt Evidence)
-- **Create Engagement**: [`c088da058f67426bb675f0167df48dc34199f070aff3b24e18073f88a19c3ef3`](https://stellar.expert/explorer/testnet/tx/c088da058f67426bb675f0167df48dc34199f070aff3b24e18073f88a19c3ef3)
-- **Fund Escrow**: [`abfdbb455790385de32675fe8ecb7fa99f10d52fbfbc8f3f64ab58d82580541e`](https://stellar.expert/explorer/testnet/tx/abfdbb455790385de32675fe8ecb7fa99f10d52fbfbc8f3f64ab58d82580541e)
-- **Submit Work Proof**: [`4d3acf2d031b80862a5b2f04d786a005cd0cb79b8b6102ff7c899ca1fe7cb14c`](https://stellar.expert/explorer/testnet/tx/4d3acf2d031b80862a5b2f04d786a005cd0cb79b8b6102ff7c899ca1fe7cb14c)
-- **Approve & Release Payment**: [`024c19ec4da8dba99d1b247e2e1c61a8cd1b0fab5bfaaf28f2b12ababc76bf93`](https://stellar.expert/explorer/testnet/tx/024c19ec4da8dba99d1b247e2e1c61a8cd1b0fab5bfaaf28f2b12ababc76bf93)
-
 ---
 
 ## 8. Quick Start Instructions
 
 ### Prerequisites
-- Node.js (for local HTTP server)
-- Rust & Cargo (if building smart contract WASM)
+- Node.js (for local HTTP server & test runner)
+- Rust & Cargo (for smart contract build & tests)
 
-### Run Application Locally
+### Run Frontend & Tests
 ```bash
 cd "New project/Vouchsafe"
 
-# Serve using Node.js
-npx serve .
+# Run frontend unit test suite
+npm test
 
-# OR serve using Python
-python -m http.server 8000
+# Serve application locally
+npx serve .
 ```
 Open `http://localhost:8000` in your web browser.
 
-### Run Contract Tests
+### Run Contract Tests & Build
 ```bash
-cargo test
+# Run Rust workspace contract tests
+cargo test --workspace
+
+# Build WASM binaries
+cargo build --target wasm32-unknown-unknown --release
 ```
-*Note: Contract unit tests compile and run natively. (On Windows `x86_64-pc-windows-gnu` environments, WASM compilation is executed via `cargo build --target wasm32-unknown-unknown --release`).*
 
 ---
 
 For detailed specifications, architectural diagrams, and verification evidence for completed levels, refer to:
 - [⚪ White Belt Documentation (Level 1)](docs/README_WHITE_BELT.md)
 - [🟡 Yellow Belt Documentation (Level 2)](docs/README_YELLOW_BELT.md)
-
+- [🟠 Orange Belt Documentation (Level 3)](docs/README_ORANGE_BELT.md)
