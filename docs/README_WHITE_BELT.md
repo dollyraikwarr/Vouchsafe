@@ -55,44 +55,33 @@ Open `http://localhost:8000` in your web browser to interact with the live dApp 
 
 ---
 
-## 3. Required Level 1 Submission Screenshots
+## 3. Screenshots
 
-All screenshots below are captured from the **current live application** running on Stellar Testnet.
+### 📸 1. Wallet Connected State
+The wallet selection modal via **StellarWalletsKit**, supporting **Freighter**, **Albedo**, **xBull**, **HOT Wallet** and more on Stellar Testnet:
 
----
-
-### 📸 1. Application Landing Page
-The Vouchsafe hero section showing the brand, navigation, and **Connect Wallet** button in the top navbar:
-
-![Landing Page](images/00_landing_page.png)
+![Wallet Connected State](images/screenshot_wallet_connected.png)
 
 ---
 
-### 📸 2. Wallet Connected State — Multi-Wallet Selection Modal
-Demonstrates the **StellarWalletsKit** wallet selection modal, supporting **Albedo**, **xBull**, **HOT Wallet**, **Freighter**, and more on Stellar Testnet. The dashboard with Configuration section and Create Engagement form are visible behind the modal:
+### 📸 2. Balance Displayed
+Live XLM balance fetched from Stellar Horizon Testnet shown in the navbar — **9,699.49 XLM** alongside the connected wallet address and Testnet badge:
 
-![Wallet Selection Modal](images/02_wallet_modal.png)
-
----
-
-### 📸 3. Balance Displayed — Dashboard with XLM Balance Badge
-Demonstrates the live XLM balance fetched from Stellar Horizon Testnet (`fetchAndDisplayBalance()`), pre-filled native XLM SAC contract address, and the full dual-panel escrow dashboard showing Configuration, Create Engagement form, Engagement Details panel, and On-Chain Transaction Logs:
-
-![Dashboard with Balance](images/01_wallet_connected.png)
+![Balance Displayed](images/screenshot_balance_displayed.png)
 
 ---
 
-### 📸 4. Successful Testnet Transaction — Transaction Result Shown to User
-Demonstrates the Engagement Details panel, status feedback banner (success/error states), and On-Chain Transaction Logs table with transaction hashes and StellarExpert explorer links. The status banner provides real-time confirmation of on-chain events:
+### 📸 3. Successful Testnet Transaction
+On-Chain Transaction Logs showing `create_engagement` transaction hash (`5a9da08a...89d2d647`) recorded on Stellar Testnet with clickable StellarExpert explorer links:
 
-![Transaction Result & Logs](images/03_successful_transaction.png)
+![Successful Testnet Transaction](images/screenshot_transaction_result.png)
 
 ---
 
-### 📸 5. Full Application View
-Full-page view of the complete Vouchsafe dApp including the landing marketing section and the full escrow dashboard:
+### 📸 4. Transaction Result Shown to the User
+The full escrow dashboard with wallet connected (**9,699.49 XLM**), contract ID configured, and On-Chain Transaction Logs providing real-time transaction hash confirmation and StellarExpert links for on-chain verification:
 
-![Full Application View](images/04_full_app.png)
+![Transaction Result Shown to User](images/screenshot_transaction_result.png)
 
 ---
 
