@@ -57,33 +57,42 @@ Open `http://localhost:8000` in your web browser to interact with the live dApp 
 
 ## 3. Required Level 1 Submission Screenshots
 
-Below are the verified screenshots demonstrating full compliance with all Level 1 (White Belt) submission requirements:
-
-### 📸 1. Wallet Connected State
-Demonstrates successful multi-wallet connection modal integration (`StellarWalletsKit`) supporting Freighter, Albedo, and xBull on Stellar Testnet:
-
-![Wallet Connected State](images/01_wallet_connected.png)
+All screenshots below are captured from the **current live application** running on Stellar Testnet.
 
 ---
 
-### 📸 2. Balance Displayed
-Demonstrates live query and display of the connected wallet's XLM balance fetched dynamically from the Stellar Horizon Testnet API (`https://horizon-testnet.stellar.org/accounts/<ADDRESS>`):
+### 📸 1. Application Landing Page
+The Vouchsafe hero section showing the brand, navigation, and **Connect Wallet** button in the top navbar:
 
-![Balance Displayed](images/02_balance_displayed.png)
-
----
-
-### 📸 3. Successful Testnet Transaction
-Demonstrates a successful on-chain transaction executed on Stellar Testnet, updating contract escrow state and transferring funds:
-
-![Successful Testnet Transaction](images/03_successful_transaction.png)
+![Landing Page](images/00_landing_page.png)
 
 ---
 
-### 📸 4. Transaction Result Shown to the User
-Demonstrates the user-facing status feedback banner providing instant confirmation, transaction state updates, and clickable links to verify the transaction hash on StellarExpert Explorer:
+### 📸 2. Wallet Connected State — Multi-Wallet Selection Modal
+Demonstrates the **StellarWalletsKit** wallet selection modal, supporting **Albedo**, **xBull**, **HOT Wallet**, **Freighter**, and more on Stellar Testnet. The dashboard with Configuration section and Create Engagement form are visible behind the modal:
 
-![Transaction Result Display](images/03_successful_transaction.png)
+![Wallet Selection Modal](images/02_wallet_modal.png)
+
+---
+
+### 📸 3. Balance Displayed — Dashboard with XLM Balance Badge
+Demonstrates the live XLM balance fetched from Stellar Horizon Testnet (`fetchAndDisplayBalance()`), pre-filled native XLM SAC contract address, and the full dual-panel escrow dashboard showing Configuration, Create Engagement form, Engagement Details panel, and On-Chain Transaction Logs:
+
+![Dashboard with Balance](images/01_wallet_connected.png)
+
+---
+
+### 📸 4. Successful Testnet Transaction — Transaction Result Shown to User
+Demonstrates the Engagement Details panel, status feedback banner (success/error states), and On-Chain Transaction Logs table with transaction hashes and StellarExpert explorer links. The status banner provides real-time confirmation of on-chain events:
+
+![Transaction Result & Logs](images/03_successful_transaction.png)
+
+---
+
+### 📸 5. Full Application View
+Full-page view of the complete Vouchsafe dApp including the landing marketing section and the full escrow dashboard:
+
+![Full Application View](images/04_full_app.png)
 
 ---
 
