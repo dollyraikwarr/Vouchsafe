@@ -73,7 +73,7 @@
                   }
                 },
                 {
-                  "u64": 100
+                  "u64": 1000
                 }
               ]
             }
@@ -361,7 +361,7 @@
                         "symbol": "deadline"
                       },
                       "val": {
-                        "u64": 100
+                        "u64": 1000
                       }
                     },
                     {
@@ -1009,7 +1009,7 @@
                   }
                 },
                 {
-                  "u64": 100
+                  "u64": 1000
                 }
               ]
             }
@@ -1273,16 +1273,16 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
                 },
                 {
-                  "string": "https://github.com/vouchsafe/pr/1"
+                  "string": "https://github.com"
                 },
                 {
-                  "string": "https://github.com/vouchsafe/pull/1"
+                  "string": ""
                 },
                 {
-                  "string": "a1b2c3d4"
+                  "string": ""
                 },
                 {
-                  "string": "Implementation of core components completed."
+                  "string": ""
                 }
               ]
             }
@@ -1306,7 +1306,7 @@
             "data": {
               "vec": [
                 {
-                  "string": "caught panic 'caller must be the developer' from contract function 'Symbol(obj#319)'"
+                  "string": "caught panic 'caller must be the developer' from contract function 'Symbol(obj#325)'"
                 },
                 {
                   "u64": 1
@@ -1315,16 +1315,16 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
                 },
                 {
-                  "string": "https://github.com/vouchsafe/pr/1"
+                  "string": "https://github.com"
                 },
                 {
-                  "string": "https://github.com/vouchsafe/pull/1"
+                  "string": ""
                 },
                 {
-                  "string": "a1b2c3d4"
+                  "string": ""
                 },
                 {
-                  "string": "Implementation of core components completed."
+                  "string": ""
                 }
               ]
             }
@@ -1392,16 +1392,16 @@
                       "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
                     },
                     {
-                      "string": "https://github.com/vouchsafe/pr/1"
+                      "string": "https://github.com"
                     },
                     {
-                      "string": "https://github.com/vouchsafe/pull/1"
+                      "string": ""
                     },
                     {
-                      "string": "a1b2c3d4"
+                      "string": ""
                     },
                     {
-                      "string": "Implementation of core components completed."
+                      "string": ""
                     }
                   ]
                 }

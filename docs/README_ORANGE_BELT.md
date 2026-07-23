@@ -1,4 +1,4 @@
-﻿# Vouchsafe — Orange Belt Documentation (Level 3)
+# Vouchsafe — Orange Belt Documentation (Level 3)
 
 > **Belt Level**: 🟠 Orange Belt  
 > **Status**: ✅ COMPLETED  
@@ -144,14 +144,21 @@ Organized under [`src/`](../src/):
 ## 8. Test Execution & Verification
 
 ### Contract Unit Tests Output
-All Rust tests in workspace pass:
-- `test_happy_path` (Full workflow)
-- `test_unauthorized_funding` (Security check)
-- `test_unauthorized_work_submission` (Security check)
-- `test_unauthorized_approval` (Security check)
-- `test_cancel_engagement` (Advanced logic)
-- `test_claim_expired_refund` (Advanced logic + timestamp expiry)
-- `test_vault_initialize_and_auth` (Vault C2C auth check)
+All 14 Rust unit tests in workspace pass (`cargo test --workspace`):
+- `test_happy_path` (Full workflow from creation to payment release)
+- `test_unauthorized_funding` (Security check: non-client funding fails)
+- `test_unauthorized_work_submission` (Security check: non-developer submission fails)
+- `test_unauthorized_approval` (Security check: non-client approval fails)
+- `test_cancel_engagement` (Cancel un-funded engagement)
+- `test_claim_expired_refund` (Timestamp expiry refund)
+- `test_set_vault_authorized` (Admin configures Vault)
+- `test_set_vault_unauthorized` (Security check: unauthorized vault config fails)
+- `test_vault_c2c_flow` (Inter-contract deposit and payment release)
+- `test_vault_expired_refund_flow` (Inter-contract refund on expiry)
+- `test_double_release_prevention` (Security check: double approval fails)
+- `test_double_refund_prevention` (Security check: double refund fails)
+- `test_vault_initialize_and_auth` (Vault initialization and auth check)
+- `test_vault_double_init` (Security check: double vault init fails)
 
 ### Frontend Unit Tests Output (`npm test`)
 ```

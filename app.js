@@ -1,6 +1,11 @@
 import StellarSdk from "https://esm.sh/@stellar/stellar-sdk@14.0.0";
 import { StellarWalletsKit, WalletNetwork, allowAllModules } from "https://esm.sh/@creit.tech/stellar-wallets-kit@1.7.5?bundle&deps=@stellar/stellar-sdk@14.0.0";
 
+import { classifyError } from "./src/utils/errors.js";
+import { stroopsToXlm, xlmToStroops, truncateAddr, getStatusString } from "./src/utils/formatting.js";
+import { clientWallet, developerWallet, setWalletSlot, requireSigningWallet } from "./src/wallet/roles.js";
+import { isEventDisplayed, markEventDisplayed } from "./src/contract/events.js";
+
 const HORIZON_URL = "https://horizon-testnet.stellar.org";
 const RPC_URL = "https://soroban-testnet.stellar.org";
 const NETWORK_PASSPHRASE = StellarSdk.Networks.TESTNET;
@@ -61,17 +66,7 @@ function hideStatus() {
   $("statusBanner").classList.add("hidden");
 }
 
-// Format Stroops to XLM
-function stroopsToXlm(stroops) {
-  return (Number(stroops) / 10000000).toFixed(2);
-}
-
-// Format XLM to Stroops (i128 BigInt)
-function xlmToStroops(xlm) {
-  return BigInt(Math.round(Number(xlm) * 10000000));
-}
-
-// Connect Wallet
+// Connect Wallet using Role Slots & Error Engine
 async function connectWallet() {
   try {
     showStatus("Opening wallet options...");
@@ -82,8 +77,10 @@ async function connectWallet() {
           kit.setWallet(option.id);
           const { address } = await kit.getAddress();
           connectedAddress = address;
+          setWalletSlot("client", address, option.id);
+          setWalletSlot("developer", address, option.id);
           
-          $("walletAddress").textContent = `${address.slice(0, 6)}...${address.slice(-6)}`;
+          $("walletAddress").textContent = truncateAddr(address);
           $("walletAddress").classList.remove("hidden");
           $("networkBadge").classList.remove("hidden");
           $("connectWalletBtn").classList.add("hidden");
@@ -92,13 +89,15 @@ async function connectWallet() {
           loadLocalStorageConfig();
           await loadEngagements();
         } catch (err) {
-          showStatus(`Failed to connect wallet: ${err.message || err}`, "error");
+          const classified = classifyError(err);
+          showStatus(`${classified.title}: ${classified.message}`, "error");
         }
       },
     });
     hideStatus();
   } catch (err) {
-    showStatus(`Failed to open wallet options: ${err.message || err}`, "error");
+    const classified = classifyError(err);
+    showStatus(`${classified.title}: ${classified.message}`, "error");
   }
 }
 
@@ -139,12 +138,12 @@ async function simulateReadOnly(contractId, method, scArgs = []) {
   }
 }
 
-// Generic Invoke Write Method
+// Generic Invoke Write Method with Role Signing Guard
 async function invokeContractViaKit(contractId, method, scArgs = []) {
-  if (!connectedAddress) throw new Error("Wallet not connected");
+  const signingAddress = requireSigningWallet(currentRole, kit);
   
   showStatus(`Preparing ${method}...`);
-  const sourceAccount = await horizonServer.loadAccount(connectedAddress);
+  const sourceAccount = await horizonServer.loadAccount(signingAddress);
   
   let tx = new StellarSdk.TransactionBuilder(sourceAccount, {
     fee: StellarSdk.BASE_FEE,
@@ -165,7 +164,7 @@ async function invokeContractViaKit(contractId, method, scArgs = []) {
 
   showStatus("Waiting for wallet signature...");
   const { signedTxXdr } = await kit.signTransaction(tx.toXDR(), {
-    address: connectedAddress,
+    address: signingAddress,
     networkPassphrase: NETWORK_PASSPHRASE,
   });
   
@@ -213,7 +212,7 @@ function logOnChainTx(actionName, hash) {
   tbody.prepend(tr);
 }
 
-// Load all engagements for active contract
+// Load all engagements using clean, deterministic sequential query loop
 async function loadEngagements() {
   if (!connectedAddress) return;
   activeContractId = $("contractIdInput").value.trim();
@@ -225,44 +224,22 @@ async function loadEngagements() {
   localStorage.setItem("vouchsafe_contract_id", activeContractId);
 
   try {
-    showStatus("Fetching engagements count...");
-    // 1. Get next ID to know total engagements
-    let nextId = 0n;
-    try {
-      const rawNext = await simulateReadOnly(activeContractId, "create_engagement", [
-        StellarSdk.nativeToScVal(connectedAddress, { type: "address" }),
-        StellarSdk.nativeToScVal(connectedAddress, { type: "address" }),
-        StellarSdk.nativeToScVal(connectedAddress, { type: "address" }),
-        StellarSdk.nativeToScVal(1n, { type: "i128" }),
-        StellarSdk.nativeToScVal(0n, { type: "u64" })
-      ]);
-      // Note: create_engagement simulation returns nextId without writing to ledger
-      nextId = BigInt(rawNext) - 1n;
-    } catch (e) {
-      // Fallback: try querying NextId directly if readable or start loop search
-      console.log("Could not simulate create_engagement to get ID, trying fallback query...", e);
-    }
-
-    if (nextId === 0n) {
-      // Loop scan up to 10 fallback if nextId couldn't be simulated
-      nextId = 15n;
-    }
-
+    showStatus("Fetching engagements...");
     engagementsList = [];
-    showStatus("Loading engagements details...");
 
-    for (let id = 1n; id <= nextId; id++) {
+    let id = 1n;
+    while (true) {
       try {
         const idVal = StellarSdk.nativeToScVal(id, { type: "u64" });
         const engagement = await simulateReadOnly(activeContractId, "get_engagement", [idVal]);
-        if (engagement) {
-          // Check if connected address is part of the engagement
-          if (engagement.client === connectedAddress || engagement.developer === connectedAddress) {
-            engagementsList.push(engagement);
-          }
+        if (!engagement) break;
+        
+        if (engagement.client === connectedAddress || engagement.developer === connectedAddress) {
+          engagementsList.push(engagement);
         }
+        id++;
       } catch (err) {
-        // Break early if we hit empty keys
+        // Stop querying when an engagement key does not exist or call fails
         break;
       }
     }
@@ -271,7 +248,8 @@ async function loadEngagements() {
     renderEngagements();
     startOnChainEventPolling();
   } catch (err) {
-    showStatus(`Failed to load engagements: ${err.message || err}`, "error");
+    const classified = classifyError(err);
+    showStatus(`${classified.title}: ${classified.message}`, "error");
   }
 }
 
@@ -297,7 +275,6 @@ function renderEngagements() {
     const item = document.createElement("button");
     item.className = `engagement-item ${selectedEngagement && selectedEngagement.id === e.id ? 'active' : ''}`;
     
-    // Status text parsing
     const statusName = getStatusString(e.status);
     
     item.innerHTML = `
@@ -321,24 +298,9 @@ function renderEngagements() {
   });
 }
 
-function truncateAddr(addr) {
-  return `${addr.slice(0, 5)}...${addr.slice(-5)}`;
-}
-
-function getStatusString(status) {
-  // Check if status is object like { name: "Created" } or string or number
-  if (status && typeof status === "object") {
-    return status.name || Object.keys(status)[0] || "Created";
-  }
-  if (typeof status === "string") return status;
-  
-  const mapping = ["Created", "Funded", "WorkSubmitted", "Approved", "Completed"];
-  return mapping[Number(status)] || "Created";
-}
-
 function getStatusIndex(status) {
   const statusStr = getStatusString(status);
-  const mapping = ["Created", "Funded", "WorkSubmitted", "Approved", "Completed"];
+  const mapping = ["Created", "Funded", "WorkSubmitted", "Approved", "Completed", "Cancelled", "Expired"];
   return mapping.indexOf(statusStr);
 }
 
@@ -381,7 +343,7 @@ function renderEngagementDetails() {
     }
   });
 
-  const progressPercent = (activeIdx / (steps.length - 1)) * 100;
+  const progressPercent = Math.min((activeIdx / (steps.length - 1)) * 100, 100);
   $("timelineProgress").style.width = `${progressPercent}%`;
 
   // Render proof of work block if submitted
@@ -429,6 +391,12 @@ function renderEngagementDetails() {
 // Create Engagement Submit Action
 $("createEngagementForm").addEventListener("submit", async (evt) => {
   evt.preventDefault();
+  
+  if (!connectedAddress) {
+    showStatus("Please click 'Connect Wallet' in the top bar first.", "error");
+    return;
+  }
+
   activeContractId = $("contractIdInput").value.trim();
   
   if (!activeContractId || activeContractId.startsWith("CAAAAA_")) {
@@ -466,7 +434,8 @@ $("createEngagementForm").addEventListener("submit", async (evt) => {
 
     await loadEngagements();
   } catch (err) {
-    showStatus(`Failed to create engagement: ${err.message || err}`, "error");
+    const classified = classifyError(err);
+    showStatus(`${classified.title}: ${classified.message}`, "error");
   }
 });
 
@@ -483,11 +452,11 @@ $("fundEscrowBtn").addEventListener("click", async () => {
     showStatus("✅ Escrow funded and active!", "success", `https://stellar.expert/explorer/testnet/tx/${result.hash}`);
     
     await loadEngagements();
-    // Select same item
     selectedEngagement = engagementsList.find(e => e.id === selectedEngagement.id);
     renderEngagementDetails();
   } catch (err) {
-    showStatus(`Failed to fund escrow: ${err.message || err}`, "error");
+    const classified = classifyError(err);
+    showStatus(`${classified.title}: ${classified.message}`, "error");
   }
 });
 
@@ -523,7 +492,8 @@ $("submitWorkForm").addEventListener("submit", async (evt) => {
     selectedEngagement = engagementsList.find(e => e.id === selectedEngagement.id);
     renderEngagementDetails();
   } catch (err) {
-    showStatus(`Failed to submit work: ${err.message || err}`, "error");
+    const classified = classifyError(err);
+    showStatus(`${classified.title}: ${classified.message}`, "error");
   }
 });
 
@@ -543,7 +513,8 @@ $("approveReleaseBtn").addEventListener("click", async () => {
     selectedEngagement = engagementsList.find(e => e.id === selectedEngagement.id);
     renderEngagementDetails();
   } catch (err) {
-    showStatus(`Failed to approve work: ${err.message || err}`, "error");
+    const classified = classifyError(err);
+    showStatus(`${classified.title}: ${classified.message}`, "error");
   }
 });
 
@@ -575,7 +546,7 @@ $("contractIdInput").addEventListener("change", () => {
   loadEngagements();
 });
 
-// Live Event Polling
+// Live Event Polling with Deduplication Engine
 function startOnChainEventPolling() {
   if (eventInterval) clearInterval(eventInterval);
   
@@ -602,13 +573,15 @@ function startOnChainEventPolling() {
       if (response.events && response.events.length > 0) {
         response.events.forEach((evt) => {
           const topics = evt.topic.map((t) => StellarSdk.scValToNative(t));
-          const type = topics[0]; // e.g. "created", "funded", "submitted", "approved", "released", "completed"
+          const type = topics[0];
           const id = topics[1];
 
-          logOnChainTx(`${type.toUpperCase()} Event`, evt.txHash);
+          if (!isEventDisplayed(evt.txHash, type, id)) {
+            markEventDisplayed(evt.txHash, type, id);
+            logOnChainTx(`${String(type).toUpperCase()} Event`, evt.txHash);
+          }
         });
         
-        // Refresh active details
         await loadEngagements();
         if (selectedEngagement) {
           selectedEngagement = engagementsList.find(e => e.id === selectedEngagement.id);
