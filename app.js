@@ -67,8 +67,13 @@ function hideStatus() {
 }
 
 // Fetch connected wallet XLM balance from Stellar Horizon Testnet
+let balanceRefreshInterval = null;
+
 async function fetchAndDisplayBalance(address) {
   if (!address) return;
+  // Show loading state immediately
+  $("walletBalance").textContent = "... XLM";
+  $("walletBalance").classList.remove("hidden");
   try {
     const horizonUrl = `https://horizon-testnet.stellar.org/accounts/${address}`;
     const res = await fetch(horizonUrl);
@@ -79,16 +84,36 @@ async function fetchAndDisplayBalance(address) {
         const formatted = parseFloat(nativeBalance.balance).toLocaleString(undefined, { maximumFractionDigits: 2 });
         $("walletBalance").textContent = `${formatted} XLM`;
         $("walletBalance").classList.remove("hidden");
+      } else {
+        $("walletBalance").textContent = "0 XLM";
       }
+    } else {
+      $("walletBalance").textContent = "-- XLM";
     }
   } catch (err) {
+    $("walletBalance").textContent = "-- XLM";
     console.warn("Horizon balance query failed:", err.message);
+  }
+}
+
+// Start auto-refreshing balance every 30s
+function startBalanceRefresh(address) {
+  if (balanceRefreshInterval) clearInterval(balanceRefreshInterval);
+  balanceRefreshInterval = setInterval(() => fetchAndDisplayBalance(address), 30000);
+}
+
+// Stop auto-refreshing balance
+function stopBalanceRefresh() {
+  if (balanceRefreshInterval) {
+    clearInterval(balanceRefreshInterval);
+    balanceRefreshInterval = null;
   }
 }
 
 // Disconnect Wallet Functionality
 function disconnectWallet() {
   connectedAddress = null;
+  stopBalanceRefresh();
   setWalletSlot("client", null, null);
   setWalletSlot("developer", null, null);
   
@@ -123,6 +148,7 @@ async function connectWallet() {
           $("connectWalletBtn").classList.add("hidden");
           
           await fetchAndDisplayBalance(address);
+          startBalanceRefresh(address);
           hideStatus();
           loadLocalStorageConfig();
           await loadEngagements();
