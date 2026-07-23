@@ -1,38 +1,36 @@
-/**
- * marketing.js
- * Handles the new marketing site only: FAQ accordion, scroll-reveal,
- * and the illustrative hero terminal demo. Deliberately kept separate
- * from app.js — it never touches wallet/contract state or dashboard IDs.
- */
+// Vouchsafe marketing site behaviour.
+// Scoped entirely to new marketing markup — never touches an id or class
+// that app.js reads or writes. Safe to remove without affecting the app.
 
 (function () {
   "use strict";
 
-  var prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  /* ---------------- FAQ accordion ---------------- */
-  document.querySelectorAll(".mkt-faq-item").forEach(function (item) {
-    var btn = item.querySelector(".mkt-faq-q");
-    if (!btn) return;
-    btn.addEventListener("click", function () {
-      var isOpen = item.classList.contains("is-open");
-      document.querySelectorAll(".mkt-faq-item.is-open").forEach(function (openItem) {
-        if (openItem !== item) {
-          openItem.classList.remove("is-open");
-          var openBtn = openItem.querySelector(".mkt-faq-q");
-          if (openBtn) openBtn.setAttribute("aria-expanded", "false");
-        }
-      });
-      item.classList.toggle("is-open", !isOpen);
-      btn.setAttribute("aria-expanded", String(!isOpen));
+  /* ---------------- Mobile nav toggle ---------------- */
+  var navToggle = document.getElementById("navToggle");
+  var navLinks = document.getElementById("marketingNavLinks");
+
+  if (navToggle && navLinks) {
+    navToggle.addEventListener("click", function () {
+      var isOpen = navLinks.classList.toggle("open");
+      navToggle.setAttribute("aria-expanded", String(isOpen));
     });
-  });
+
+    navLinks.querySelectorAll("a").forEach(function (link) {
+      link.addEventListener("click", function () {
+        navLinks.classList.remove("open");
+        navToggle.setAttribute("aria-expanded", "false");
+      });
+    });
+  }
 
   /* ---------------- Scroll reveal ---------------- */
-  var revealTargets = document.querySelectorAll(".mkt-reveal");
-  if (prefersReducedMotion || !("IntersectionObserver" in window)) {
-    revealTargets.forEach(function (el) { el.classList.add("in-view"); });
-  } else {
+  var revealEls = document.querySelectorAll(".reveal");
+
+  if (revealEls.length && "IntersectionObserver" in window && !reduceMotion) {
+    document.documentElement.classList.add("js-reveal-ready");
+
     var observer = new IntersectionObserver(
       function (entries) {
         entries.forEach(function (entry) {
@@ -42,149 +40,182 @@
           }
         });
       },
-      { threshold: 0.15, rootMargin: "0px 0px -60px 0px" }
+      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
     );
-    revealTargets.forEach(function (el) { observer.observe(el); });
+
+    revealEls.forEach(function (el) {
+      observer.observe(el);
+    });
   }
 
-  /* ---------------- Hero terminal demo ---------------- */
-  var stepsEl = document.getElementById("mktTermSteps");
-  var logEl = document.getElementById("mktTermLog");
-  if (!stepsEl || !logEl) return;
+  /* ---------------- FAQ accordion ---------------- */
+  document.querySelectorAll(".faq-item").forEach(function (item) {
+    var question = item.querySelector(".faq-question");
+    if (!question) return;
 
-  var steps = [
-    { key: "created", evt: "created", detail: "engagement #482 · client → developer" },
-    { key: "funded", evt: "funded", detail: "500.0000000 locked in escrow" },
-    { key: "submitted", evt: "submitted", detail: "deliverable proof recorded on-chain" },
-    { key: "approved", evt: "approved", detail: "client approved deliverable" },
-    { key: "released", evt: "released", detail: "500.0000000 → developer" },
-    { key: "completed", evt: "completed", detail: "engagement #482 closed" }
-  ];
+    question.addEventListener("click", function () {
+      var wasOpen = item.classList.contains("open");
 
-  var stepNodes = steps.map(function (s) {
-    return stepsEl.querySelector('[data-step="' + s.key + '"]');
+      document.querySelectorAll(".faq-item.open").forEach(function (openItem) {
+        if (openItem !== item) {
+          openItem.classList.remove("open");
+          var q = openItem.querySelector(".faq-question");
+          if (q) q.setAttribute("aria-expanded", "false");
+        }
+      });
+
+      item.classList.toggle("open", !wasOpen);
+      question.setAttribute("aria-expanded", String(!wasOpen));
+    });
   });
 
-  function randomHash() {
-    var chars = "0123456789abcdef";
-    var out = "";
-    for (var i = 0; i < 10; i++) out += chars[Math.floor(Math.random() * chars.length)];
-    return out + "…";
-  }
+  /* ---------------- Hero lifecycle simulator ---------------- */
+  var simEls = {
+    clientFill: document.getElementById("simClientFill"),
+    escrowFill: document.getElementById("simEscrowFill"),
+    devFill: document.getElementById("simDevFill"),
+    clientAmount: document.getElementById("simClientAmount"),
+    escrowAmount: document.getElementById("simEscrowAmount"),
+    devAmount: document.getElementById("simDevAmount"),
+    log: document.getElementById("simLog"),
+    statusText: document.getElementById("simStatusText"),
+  };
 
-  function timestamp(offsetSeconds) {
-    var d = new Date(Date.now() - offsetSeconds * 1000);
-    return d.toLocaleTimeString("en-US", { hour12: false });
-  }
+  if (simEls.log && simEls.clientFill) {
+    var AMOUNT = 500;
+    var engagementId = 482;
 
-  function renderStaticFinalState() {
-    stepNodes.forEach(function (node) {
-      if (node) node.classList.add("is-done");
-    });
-    logEl.innerHTML = steps
-      .map(function (s, i) {
-        return (
-          '<div class="mkt-term-line"><span class="t">' +
-          timestamp((steps.length - i) * 4) +
-          '</span><span class="evt">' +
-          s.evt +
-          "</span>" +
-          s.detail +
-          ' <span class="hash">· ' +
-          randomHash() +
-          "</span></div>"
-        );
-      })
-      .join("");
-  }
-
-  if (prefersReducedMotion) {
-    renderStaticFinalState();
-    return;
-  }
-
-  var current = 0;
-  var lineTimer = null;
-  var cycleTimer = null;
-
-  function resetCycle() {
-    stepNodes.forEach(function (node) {
-      if (node) node.classList.remove("is-active", "is-done");
-    });
-    logEl.innerHTML = "";
-    current = 0;
-  }
-
-  function advance() {
-    if (current > 0 && stepNodes[current - 1]) {
-      stepNodes[current - 1].classList.remove("is-active");
-      stepNodes[current - 1].classList.add("is-done");
+    function fmt(n) {
+      return n.toFixed(0) + " XLM";
     }
-    if (current >= steps.length) {
-      cycleTimer = setTimeout(function () {
-        resetCycle();
-        lineTimer = setTimeout(advance, 700);
-      }, 2600);
+
+    function setBalances(client, escrow, dev) {
+      simEls.clientFill.style.width = (client / AMOUNT) * 100 + "%";
+      simEls.escrowFill.style.width = (escrow / AMOUNT) * 100 + "%";
+      simEls.devFill.style.width = (dev / AMOUNT) * 100 + "%";
+      simEls.clientAmount.textContent = fmt(client);
+      simEls.escrowAmount.textContent = fmt(escrow);
+      simEls.devAmount.textContent = fmt(dev);
+    }
+
+    function fakeHash() {
+      var chars = "abcdef0123456789";
+      var out = "";
+      for (var i = 0; i < 8; i++) out += chars[Math.floor(Math.random() * chars.length)];
+      return out;
+    }
+
+    function log(text, cls) {
+      var line = document.createElement("div");
+      if (cls) line.className = cls;
+      line.textContent = text;
+      simEls.log.prepend(line);
+      while (simEls.log.children.length > 5) {
+        simEls.log.removeChild(simEls.log.lastChild);
+      }
+    }
+
+    function clearLog() {
+      simEls.log.innerHTML = "";
+    }
+
+    // Static end-state for reduced-motion users: no looping animation,
+    // just show a completed engagement so the widget still communicates.
+    if (reduceMotion) {
+      setBalances(0, 0, AMOUNT);
+      clearLog();
+      log("$ approve_work(" + engagementId + ")", "sim-log-call");
+      log("→ event: released · " + AMOUNT + " XLM → developer", "sim-log-event");
+      log("→ event: completed · engagement #" + engagementId + " closed", "sim-log-event");
+      if (simEls.statusText) simEls.statusText.textContent = "Engagement lifecycle (static preview)";
       return;
     }
 
-    var step = steps[current];
-    if (stepNodes[current]) stepNodes[current].classList.add("is-active");
+    var STEP_DELAY = 1450;
+    var LOOP_PAUSE = 3200;
+    var timer = null;
 
-    var line = document.createElement("div");
-    line.className = "mkt-term-line";
-    line.innerHTML =
-      '<span class="t">' +
-      timestamp(0) +
-      '</span><span class="evt">' +
-      step.evt +
-      "</span>" +
-      step.detail +
-      ' <span class="hash">· ' +
-      randomHash() +
-      "</span>";
-    logEl.appendChild(line);
-    logEl.scrollTop = logEl.scrollHeight;
+    var steps = [
+      {
+        run: function () {
+          engagementId += 1;
+          setBalances(AMOUNT, 0, 0);
+          clearLog();
+          if (simEls.statusText) simEls.statusText.textContent = "Simulating engagement lifecycle";
+          log("$ create_engagement(client, developer, token, 500, deadline)", "sim-log-call");
+        },
+      },
+      {
+        run: function () {
+          log("→ event: created · engagement #" + engagementId, "sim-log-event");
+        },
+      },
+      {
+        run: function () {
+          log("$ fund_engagement(" + engagementId + ")", "sim-log-call");
+        },
+      },
+      {
+        run: function () {
+          setBalances(0, AMOUNT, 0);
+          log("→ event: funded · " + AMOUNT + " XLM locked in escrow", "sim-log-event");
+        },
+      },
+      {
+        run: function () {
+          log("$ submit_work(" + engagementId + ", url, pr, commit, note)", "sim-log-call");
+        },
+      },
+      {
+        run: function () {
+          log("→ event: submitted · deliverable recorded on-chain", "sim-log-event");
+        },
+      },
+      {
+        run: function () {
+          log("$ approve_work(" + engagementId + ")", "sim-log-call");
+        },
+      },
+      {
+        run: function () {
+          setBalances(0, 0, AMOUNT);
+          log("→ event: released · " + AMOUNT + " XLM → developer  [" + fakeHash() + "]", "sim-log-event");
+        },
+      },
+      {
+        run: function () {
+          log("→ event: completed · engagement #" + engagementId + " closed", "sim-log-event");
+          if (simEls.statusText) simEls.statusText.textContent = "Engagement complete";
+        },
+      },
+    ];
 
-    current += 1;
-    lineTimer = setTimeout(advance, 1150);
-  }
+    var stepIndex = 0;
 
-  advance();
+    function tick() {
+      steps[stepIndex].run();
+      var isLast = stepIndex === steps.length - 1;
+      stepIndex = (stepIndex + 1) % steps.length;
+      timer = setTimeout(tick, isLast ? LOOP_PAUSE : STEP_DELAY);
+    }
 
-  // Pause the loop when the hero scrolls out of view to save cycles.
-  if ("IntersectionObserver" in window) {
-    var heroObserver = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (!entry.isIntersecting) {
-          clearTimeout(lineTimer);
-          clearTimeout(cycleTimer);
-        } else if (!lineTimer && !cycleTimer) {
-          lineTimer = setTimeout(advance, 400);
-        }
-      });
-    }, { threshold: 0.1 });
-    heroObserver.observe(logEl.closest(".mkt-hero"));
-  }
-
-  /* ---------------- Copy Contract ID ---------------- */
-  var copyBtn = document.getElementById("copyContractBtn");
-  if (copyBtn) {
-    copyBtn.addEventListener("click", function () {
-      var contractId = "CBHLS5OKZWPYZTQA2DH66OJZMD6IZ7U54DVNM3DP5M4R3FSHOOTXMKTR";
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(contractId).then(function () {
-          copyBtn.classList.add("is-copied");
-          copyBtn.textContent = "✓ Copied!";
-          setTimeout(function () {
-            copyBtn.classList.remove("is-copied");
-            copyBtn.textContent = "📋 Copy ID";
-          }, 2000);
-        }).catch(function (err) {
-          console.error("Copy failed:", err);
+    // Only run the loop while the hero is actually visible, so it isn't
+    // burning cycles once someone has scrolled deep into the page.
+    var heroSim = document.querySelector(".hero-sim");
+    if (heroSim && "IntersectionObserver" in window) {
+      var simObserver = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting && !timer) {
+            tick();
+          } else if (!entry.isIntersecting && timer) {
+            clearTimeout(timer);
+            timer = null;
+          }
         });
-      }
-    });
+      });
+      simObserver.observe(heroSim);
+    } else {
+      tick();
+    }
   }
 })();
-
