@@ -4,6 +4,7 @@
   "description": "Vouchsafe - On-chain work escrow payment protocol on Stellar",
   "type": "module",
   "scripts": {
+    "build": "echo 'Static build ready'",
     "test": "node --test tests/*.test.js"
   },
   "dependencies": {
