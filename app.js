@@ -66,6 +66,42 @@ function hideStatus() {
   $("statusBanner").classList.add("hidden");
 }
 
+// Fetch connected wallet XLM balance from Stellar Horizon Testnet
+async function fetchAndDisplayBalance(address) {
+  if (!address) return;
+  try {
+    const horizonUrl = `https://horizon-testnet.stellar.org/accounts/${address}`;
+    const res = await fetch(horizonUrl);
+    if (res.ok) {
+      const data = await res.json();
+      const nativeBalance = data.balances.find((b) => b.asset_type === "native");
+      if (nativeBalance) {
+        const formatted = parseFloat(nativeBalance.balance).toLocaleString(undefined, { maximumFractionDigits: 2 });
+        $("walletBalance").textContent = `${formatted} XLM`;
+        $("walletBalance").classList.remove("hidden");
+      }
+    }
+  } catch (err) {
+    console.warn("Horizon balance query failed:", err.message);
+  }
+}
+
+// Disconnect Wallet Functionality
+function disconnectWallet() {
+  connectedAddress = null;
+  setWalletSlot("client", null, null);
+  setWalletSlot("developer", null, null);
+  
+  $("walletAddress").textContent = "Not Connected";
+  $("walletAddress").classList.add("hidden");
+  $("walletBalance").classList.add("hidden");
+  $("networkBadge").classList.add("hidden");
+  $("disconnectWalletBtn").classList.add("hidden");
+  $("connectWalletBtn").classList.remove("hidden");
+  
+  showStatus("Wallet disconnected.", "success");
+}
+
 // Connect Wallet using Role Slots & Error Engine
 async function connectWallet() {
   try {
@@ -83,8 +119,10 @@ async function connectWallet() {
           $("walletAddress").textContent = truncateAddr(address);
           $("walletAddress").classList.remove("hidden");
           $("networkBadge").classList.remove("hidden");
+          $("disconnectWalletBtn").classList.remove("hidden");
           $("connectWalletBtn").classList.add("hidden");
           
+          await fetchAndDisplayBalance(address);
           hideStatus();
           loadLocalStorageConfig();
           await loadEngagements();
@@ -594,5 +632,6 @@ function startOnChainEventPolling() {
   }, 6000);
 }
 
-// Wire Connect Button
+// Wire Connect & Disconnect Buttons
 $("connectWalletBtn").addEventListener("click", connectWallet);
+$("disconnectWalletBtn").addEventListener("click", disconnectWallet);
