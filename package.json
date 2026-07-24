@@ -8,8 +8,11 @@
     "test": "node --test tests/*.test.js"
   },
   "dependencies": {
+    "@creit.tech/stellar-wallets-kit": "^1.1.2",
     "@stellar/freighter-api": "^2.0.0",
-    "@stellar/stellar-sdk": "^14.0.0",
-    "@creit.tech/stellar-wallets-kit": "^1.1.2"
+    "@stellar/stellar-sdk": "^14.0.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.61.1"
   }
 }
