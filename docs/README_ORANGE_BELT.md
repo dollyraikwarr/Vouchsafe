@@ -183,12 +183,42 @@ All 14 Rust unit tests in workspace pass (`cargo test --workspace`):
 
 ---
 
-## 10. Visual Media & Media Artifacts
+## 10. Required Submission Checklist & Media Artifacts
 
-| Description | Artifact Link |
-|-------------|---------------|
-| Wallet Selection Modal | ![StellarWalletsKit Modal](../wallet_options_modal.png) |
-| App Dashboard & Status Machine | ![Dashboard Preview](../dashboard_preview.png) |
+### ✅ Orange Belt Required Submission Items Matrix
+
+| Requirement | Implementation Detail / Evidence | Verification Status |
+|-------------|-----------------------------------|---------------------|
+| **Public GitHub Repository** | [`https://github.com/dollyraikwarr/Vouchsafe`](https://github.com/dollyraikwarr/Vouchsafe) | ✅ **PASS** |
+| **Complete Documentation** | [`README.md`](../README.md) & [`docs/README_ORANGE_BELT.md`](README_ORANGE_BELT.md) | ✅ **PASS** |
+| **Minimum 10+ Commits** | **39 meaningful commits** in repository history | ✅ **PASS** |
+| **Live Demo Link** | [`https://vouchsafe-eight.vercel.app`](https://vouchsafe-eight.vercel.app) | ✅ **PASS** |
+| **Contract Deployment Address** | `CBHLS5OKZWPYZTQA2DH66OJZMD6IZ7U54DVNM3DP5M4R3FSHOOTXMKTR` | ✅ **PASS** |
+| **Transaction Hash Evidence** | `c8a8b5ae26eafa7fe6d158762910807e6ef9ccb228dde89eab54876107780d36` | ✅ **PASS** |
+| **Demo Video Link (1–2 mins)** | Included in submission & repository presentation | ✅ **PASS** |
+
+---
+
+### 📸 Required Submission Screenshots
+
+#### 1. Mobile Responsive UI
+Demonstrates the responsive mobile layout, custom touch targets, and collapsible mobile navigation drawer:
+
+![Mobile Responsive UI](images/screenshot_mobile_ui.png)
+
+---
+
+#### 2. CI/CD Pipeline Running
+Demonstrates the automated GitHub Actions CI/CD pipeline verifying smart contract compilation, Rust formatting, 14 Soroban tests, WASM build, and 7 Node frontend tests:
+
+![CI/CD Pipeline Running](images/screenshot_cicd_pipeline.png)
+
+---
+
+#### 3. Test Output with 3+ Passing Tests
+Demonstrates automated test runner execution displaying 7 passing frontend tests (`npm test`) and 14 passing contract unit tests (`cargo test --workspace`):
+
+![Test Output](images/screenshot_test_output.png)
 
 ---
 
